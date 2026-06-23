@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseUnits } from "viem";
+import { useAccount, useWriteContract, useReadContract } from "wagmi";
+import { parseUnits, formatUnits } from "viem";
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/Button";
 import { NumericKeypad } from "@/components/ui/NumericKeypad";
 import { FHEStatusPill } from "@/components/ui/FHEStatusPill";
 import { TxStatus, TxStep } from "@/components/ui/TxStatus";
+import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { ConfidentialUSDCABI } from "@/lib/abis/ConfidentialUSDC";
 import { getAddress } from "@/lib/addresses";
 import { useFhevm } from "@/lib/fhevm";
+import { useBalance } from "@/hooks/useBalance";
 import { encrypt64 } from "@/lib/shade";
 import toast from "react-hot-toast";
 
@@ -35,6 +37,7 @@ export default function ShieldPage() {
   const { address, chainId } = useAccount();
   const { instance, isReady } = useFhevm();
   const { writeContractAsync } = useWriteContract();
+  const { isRevealed, decryptedValue, reveal, isLoading: balanceLoading } = useBalance();
 
   const cid = chainId ?? 31337;
   const cusdcAddr = getAddress(cid, "ConfidentialUSDC");
@@ -49,12 +52,35 @@ export default function ShieldPage() {
   });
 
   const amountRaw = amount ? parseUnits(amount, USDC_DECIMALS) : 0n;
-  const usdcBalanceFmt = usdcBalance
-    ? (Number(usdcBalance) / 10 ** USDC_DECIMALS).toFixed(2)
-    : "—";
+
+  // USDC balance as display string
+  const usdcBalanceFmt = usdcBalance !== undefined
+    ? parseFloat(formatUnits(usdcBalance, USDC_DECIMALS)).toFixed(2)
+    : undefined;
+
+  // Validation
+  const shieldExceedsBalance =
+    tab === "shield" && usdcBalance !== undefined && amountRaw > 0n && amountRaw > usdcBalance;
+  const unshieldExceedsBalance =
+    tab === "unshield" && isRevealed && decryptedValue != null && amount
+      ? parseFloat(amount) > parseFloat(decryptedValue.replace(/,/g, ""))
+      : false;
+
+  const validationError =
+    shieldExceedsBalance ? "Exceeds USDC balance" :
+    unshieldExceedsBalance ? "Exceeds cUSDC balance" :
+    undefined;
+
+  function handleMax() {
+    if (tab === "shield" && usdcBalance !== undefined) {
+      setAmount(formatUnits(usdcBalance, USDC_DECIMALS));
+    } else if (tab === "unshield" && isRevealed && decryptedValue) {
+      setAmount(decryptedValue.replace(/,/g, ""));
+    }
+  }
 
   async function handleShield() {
-    if (!address || !amount || amountRaw === 0n) return;
+    if (!address || !amount || amountRaw === 0n || shieldExceedsBalance) return;
     setIsTxing(true);
     setSteps([
       { id: "approve", label: "Approve USDC spend", status: "active" },
@@ -67,8 +93,10 @@ export default function ShieldPage() {
         functionName: "approve",
         args: [cusdcAddr, amountRaw],
       });
-      setSteps((s) => s.map((x) => x.id === "approve" ? { ...x, status: "done" } : x.id === "shield" ? { ...x, status: "active" } : x));
-
+      setSteps((s) => s.map((x) =>
+        x.id === "approve" ? { ...x, status: "done" } :
+        x.id === "shield" ? { ...x, status: "active" } : x
+      ));
       await writeContractAsync({
         address: cusdcAddr,
         abi: ConfidentialUSDCABI,
@@ -89,7 +117,7 @@ export default function ShieldPage() {
   }
 
   async function handleUnshield() {
-    if (!address || !amount || amountRaw === 0n || !instance) return;
+    if (!address || !amount || amountRaw === 0n || !instance || unshieldExceedsBalance) return;
     setIsTxing(true);
     setSteps([
       { id: "encrypt", label: "Encrypt amount", status: "active" },
@@ -98,15 +126,20 @@ export default function ShieldPage() {
     ]);
     try {
       const { handle, proof } = await encrypt64(instance, cusdcAddr, address, amountRaw);
-      setSteps((s) => s.map((x) => x.id === "encrypt" ? { ...x, status: "done" } : x.id === "request" ? { ...x, status: "active" } : x));
-
+      setSteps((s) => s.map((x) =>
+        x.id === "encrypt" ? { ...x, status: "done" } :
+        x.id === "request" ? { ...x, status: "active" } : x
+      ));
       await writeContractAsync({
         address: cusdcAddr,
         abi: ConfidentialUSDCABI,
         functionName: "requestUnshield",
         args: [handle, proof],
       });
-      setSteps((s) => s.map((x) => x.id === "request" ? { ...x, status: "done" } : x.id === "wait" ? { ...x, status: "active" } : x));
+      setSteps((s) => s.map((x) =>
+        x.id === "request" ? { ...x, status: "done" } :
+        x.id === "wait" ? { ...x, status: "active" } : x
+      ));
       toast("Unshield requested — KMS will finalize shortly", { icon: "🔓" });
       setAmount("");
     } catch (err: unknown) {
@@ -117,6 +150,10 @@ export default function ShieldPage() {
       setIsTxing(false);
     }
   }
+
+  const canMax =
+    (tab === "shield" && usdcBalance !== undefined && usdcBalance > 0n) ||
+    (tab === "unshield" && isRevealed && !!decryptedValue);
 
   return (
     <AppShell>
@@ -140,23 +177,51 @@ export default function ShieldPage() {
           ))}
         </div>
 
-        {/* Balance info */}
-        {tab === "shield" && (
-          <div className="flex justify-between items-center text-xs text-white/40">
-            <span>USDC balance</span>
-            <span className="font-mono">{usdcBalanceFmt} USDC</span>
-          </div>
+        {/* cUSDC balance on unshield tab */}
+        {tab === "unshield" && (
+          <GlassCard padding="sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-white/40">cUSDC balance</span>
+              <EncryptedBadge
+                size="sm"
+                value={decryptedValue ?? undefined}
+                isRevealed={isRevealed}
+                onReveal={reveal}
+                isLoading={balanceLoading}
+              />
+            </div>
+          </GlassCard>
         )}
 
         {/* Keypad */}
         <GlassCard padding="md">
-          <NumericKeypad value={amount} onChange={setAmount} />
+          <NumericKeypad
+            value={amount}
+            onChange={setAmount}
+            unit={tab === "shield" ? "USDC" : "cUSDC"}
+            maxValue={
+              tab === "shield"
+                ? usdcBalanceFmt
+                : isRevealed && decryptedValue
+                ? decryptedValue
+                : undefined
+            }
+            onMax={canMax ? handleMax : undefined}
+            error={validationError}
+          />
         </GlassCard>
 
         {/* FHE badge */}
         <div className="flex justify-center">
           <FHEStatusPill status={isTxing ? "encrypting" : "idle"} />
         </div>
+
+        {/* Unshield: reveal prompt if not yet revealed */}
+        {tab === "unshield" && !isRevealed && (
+          <p className="text-xs text-white/30 text-center leading-relaxed px-2">
+            Reveal your balance above to enable Max and balance validation.
+          </p>
+        )}
 
         {/* Tx steps */}
         {steps.length > 0 && (
@@ -165,14 +230,14 @@ export default function ShieldPage() {
           </GlassCard>
         )}
 
-        {/* Note for unshield */}
+        {/* Two-step note */}
         {tab === "unshield" && (
-          <SectionLabel>Two-step process</SectionLabel>
-        )}
-        {tab === "unshield" && (
-          <p className="text-xs text-white/30 text-center leading-relaxed px-2">
-            Unshielding requires the Zama KMS to sign the decrypted amount. The USDC release happens after finalization.
-          </p>
+          <>
+            <SectionLabel>Two-step process</SectionLabel>
+            <p className="text-xs text-white/30 text-center leading-relaxed px-2">
+              Unshielding requires the Zama KMS to sign the decrypted amount. The USDC release happens after finalization.
+            </p>
+          </>
         )}
 
         {/* CTA */}
@@ -180,7 +245,12 @@ export default function ShieldPage() {
           fullWidth
           size="lg"
           isLoading={isTxing}
-          disabled={!amount || amountRaw === 0n || (tab === "unshield" && !isReady)}
+          disabled={
+            !amount ||
+            amountRaw === 0n ||
+            !!validationError ||
+            (tab === "unshield" && !isReady)
+          }
           onClick={tab === "shield" ? handleShield : handleUnshield}
         >
           {tab === "shield" ? `Shield ${amount || "0"} USDC` : `Request Unshield`}

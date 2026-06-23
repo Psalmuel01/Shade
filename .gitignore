@@ -1,12 +1,30 @@
+# Hardhat
 node_modules/
 artifacts/
 cache/
 typechain-types/
 coverage/
 coverage.json
+
+# Secrets
 .env
 .env.local
+.env.*.local
+
+# Local deployments (not to be committed — add sepolia.json if you want it tracked)
 deployments/localhost.json
 deployments/hardhat.json
-*.log
+
+# Frontend build
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/tsconfig.tsbuildinfo
+frontend/next-env.d.ts
+
+# OS
 .DS_Store
+*.log

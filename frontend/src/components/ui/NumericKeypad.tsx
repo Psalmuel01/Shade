@@ -9,6 +9,10 @@ interface NumericKeypadProps {
   onChange: (val: string) => void;
   maxDecimals?: number;
   className?: string;
+  unit?: string;
+  maxValue?: string;
+  onMax?: () => void;
+  error?: string;
 }
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
@@ -18,6 +22,10 @@ export function NumericKeypad({
   onChange,
   maxDecimals = 6,
   className,
+  unit = "USDC",
+  maxValue,
+  onMax,
+  error,
 }: NumericKeypadProps) {
   function press(key: string) {
     if (key === "⌫") {
@@ -43,11 +51,32 @@ export function NumericKeypad({
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {/* Amount display */}
-      <div className="flex items-baseline justify-center gap-2 py-4">
-        <span className="text-5xl font-mono font-semibold text-[#FAFAFA] tabular-nums tracking-tight">
-          {display}
-        </span>
-        <span className="text-base text-white/30 font-mono">cUSDC</span>
+      <div className="flex flex-col items-center gap-1 py-2">
+        <div className="flex items-baseline justify-center gap-2">
+          <span className="text-5xl font-mono font-semibold text-[#FAFAFA] tabular-nums tracking-tight">
+            {display}
+          </span>
+          <span className="text-base text-white/30 font-mono">{unit}</span>
+        </div>
+
+        {/* Max / balance row */}
+        <div className="flex items-center gap-2 h-5">
+          {error ? (
+            <span className="text-xs text-red-400 font-mono">{error}</span>
+          ) : maxValue !== undefined ? (
+            <>
+              <span className="text-xs text-white/30 font-mono">Max {maxValue} {unit}</span>
+              {onMax && (
+                <button
+                  onClick={onMax}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2 transition-colors"
+                >
+                  Use max
+                </button>
+              )}
+            </>
+          ) : null}
+        </div>
       </div>
 
       {/* Keys */}

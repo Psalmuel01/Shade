@@ -35,17 +35,24 @@ export function useBalance() {
     setIsDecrypting(true);
     try {
       const { privateKey, publicKey } = instance.generateKeypair();
-      const eip712 = instance.createEIP712(publicKey, [cusdcAddr]);
-      const sig = await signTypedDataAsync(eip712 as Parameters<typeof signTypedDataAsync>[0]);
+      const startTimestamp = Math.floor(Date.now() / 1000);
+      const durationDays = 1;
+      const eip712 = instance.createEIP712(publicKey, [cusdcAddr], startTimestamp, durationDays);
+      // wagmi's signTypedDataAsync is structurally compatible but the generic types don't align
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sig = await signTypedDataAsync(eip712 as any);
       const result = await instance.userDecrypt(
-        [handle as string],
+        [{ handle: handle as string, contractAddress: cusdcAddr }],
         privateKey,
         publicKey,
         sig,
         [cusdcAddr],
         address,
+        startTimestamp,
+        durationDays,
       );
-      const val = Object.values(result)[0] ?? BigInt(0);
+      const raw = Object.values(result)[0];
+      const val = typeof raw === "bigint" ? raw : BigInt(0);
       setDecryptedValue(formatUSDC(val));
       setIsRevealed(true);
     } catch (err) {
