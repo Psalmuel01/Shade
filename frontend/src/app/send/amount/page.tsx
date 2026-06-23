@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { NumericKeypad } from "@/components/ui/NumericKeypad";
 import { AddressDisplay } from "@/components/ui/AddressDisplay";
 import { FHEStatusPill } from "@/components/ui/FHEStatusPill";
+import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
+import { useBalance } from "@/hooks/useBalance";
 import { Lock, Send } from "lucide-react";
 
 function SendAmountInner() {
@@ -19,10 +21,20 @@ function SendAmountInner() {
   const to = params.get("to") ?? "";
   const mode = params.get("mode") ?? "standard";
 
+  const { isRevealed, decryptedValue, reveal, isLoading } = useBalance();
+
   const amountRaw = amount ? parseUnits(amount, 6) : 0n;
+  const balanceNum = isRevealed && decryptedValue
+    ? parseFloat(decryptedValue.replace(/,/g, ""))
+    : null;
+  const exceedsBalance = balanceNum !== null && parseFloat(amount || "0") > balanceNum;
+
+  function handleMax() {
+    if (balanceNum !== null) setAmount(String(balanceNum));
+  }
 
   function next() {
-    if (!amountRaw) return;
+    if (!amountRaw || exceedsBalance) return;
     router.push(`/send/confirm?to=${to}&mode=${mode}&amount=${amount}`);
   }
 
@@ -52,23 +64,57 @@ function SendAmountInner() {
           </div>
         </GlassCard>
 
+        {/* Balance row */}
+        <GlassCard padding="sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs text-white/40">Your cUSDC balance</span>
+            <EncryptedBadge
+              size="sm"
+              value={decryptedValue ?? undefined}
+              isRevealed={isRevealed}
+              onReveal={reveal}
+              isLoading={isLoading}
+            />
+          </div>
+        </GlassCard>
+
         {/* Keypad */}
         <GlassCard padding="md">
-          <NumericKeypad value={amount} onChange={setAmount} />
+          <NumericKeypad
+            value={amount}
+            onChange={setAmount}
+            unit="cUSDC"
+            disabled={!isRevealed}
+            maxValue={isRevealed && decryptedValue ? decryptedValue : undefined}
+            onMax={isRevealed && balanceNum !== null ? handleMax : undefined}
+            error={exceedsBalance ? "Exceeds cUSDC balance" : undefined}
+          />
         </GlassCard>
 
         <div className="flex justify-center">
           <FHEStatusPill status="idle" />
         </div>
 
-        <Button
-          fullWidth
-          size="lg"
-          disabled={!amountRaw}
-          onClick={next}
-        >
-          Preview Send
-        </Button>
+        {!isRevealed ? (
+          <Button fullWidth size="lg" onClick={reveal} isLoading={isLoading}>
+            Reveal Balance to Continue
+          </Button>
+        ) : (
+          <Button
+            fullWidth
+            size="lg"
+            disabled={!amountRaw || exceedsBalance}
+            onClick={next}
+          >
+            Preview Send
+          </Button>
+        )}
+
+        {!isRevealed && (
+          <p className="text-xs text-white/40 text-center -mt-2 leading-relaxed">
+            Balance must be revealed so we can verify you have enough to send.
+          </p>
+        )}
       </div>
     </AppShell>
   );

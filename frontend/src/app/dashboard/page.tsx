@@ -116,6 +116,10 @@ const ACTIVITY_ICON: Record<ActivityType, React.ElementType> = {
   stealth_sent: Send,
   proof_published: ScanLine,
   payroll_claimed: Briefcase,
+  template_created: Briefcase,
+  run_created: Briefcase,
+  run_funded: Briefcase,
+  run_executed: CheckCircle,
 };
 
 const ACTIVITY_COLOR: Record<ActivityType, string> = {
@@ -130,6 +134,10 @@ const ACTIVITY_COLOR: Record<ActivityType, string> = {
   stealth_sent: "text-blue-400 bg-blue-500/10",
   proof_published: "text-amber-400 bg-amber-500/10",
   payroll_claimed: "text-green-400 bg-green-500/10",
+  template_created: "text-blue-400 bg-blue-500/10",
+  run_created: "text-blue-400 bg-blue-500/10",
+  run_funded: "text-amber-400 bg-amber-500/10",
+  run_executed: "text-green-400 bg-green-500/10",
 };
 
 function ActivityRow({ item, chainId }: { item: ActivityItem; chainId?: number }) {

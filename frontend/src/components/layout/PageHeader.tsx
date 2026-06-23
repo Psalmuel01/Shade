@@ -7,11 +7,12 @@ import { cn } from "@/lib/cn";
 interface PageHeaderProps {
   title: string;
   showBack?: boolean;
+  onBack?: () => void;
   right?: React.ReactNode;
   className?: string;
 }
 
-export function PageHeader({ title, showBack = true, right, className }: PageHeaderProps) {
+export function PageHeader({ title, showBack = true, onBack, right, className }: PageHeaderProps) {
   const router = useRouter();
 
   return (
@@ -21,9 +22,9 @@ export function PageHeader({ title, showBack = true, right, className }: PageHea
         className,
       )}
     >
-      {showBack && (
+      {(showBack || onBack) && (
         <button
-          onClick={() => router.back()}
+          onClick={() => onBack ? onBack() : router.back()}
           className="p-2 -ml-2 text-white/50 hover:text-[#FAFAFA] transition-colors rounded-xl hover:bg-white/[0.06]"
           aria-label="Go back"
         >
