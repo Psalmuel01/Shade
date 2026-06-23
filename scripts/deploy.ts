@@ -23,9 +23,9 @@ async function main() {
     console.log(`MockUSDC deployed:      ${usdcAddress}`);
   }
 
-  const ConfidentialUSDC = await ethers.getContractFactory("ConfidentialUSDC");
+  // 1. ConfidentialUSDC — the foundation every other contract builds on.
   const cusdc = await upgrades.deployProxy(
-    ConfidentialUSDC,
+    await ethers.getContractFactory("ConfidentialUSDC"),
     [usdcAddress, deployer.address],
     { kind: "uups", initializer: "initialize" },
   );
@@ -33,11 +33,26 @@ async function main() {
   const cusdcAddress = await cusdc.getAddress();
   console.log(`ConfidentialUSDC proxy: ${cusdcAddress}`);
 
+  // 2-5. The feature contracts, each pointed at cUSDC.
+  const cusdcConsumers = ["PayrollVault", "PrivateEscrow", "BalanceProver", "StealthSend"] as const;
+  const addresses: Record<string, string> = {};
+  for (const name of cusdcConsumers) {
+    const c = await upgrades.deployProxy(
+      await ethers.getContractFactory(name),
+      [cusdcAddress, deployer.address],
+      { kind: "uups", initializer: "initialize" },
+    );
+    await c.waitForDeployment();
+    addresses[name] = await c.getAddress();
+    console.log(`${name} proxy: ${addresses[name]}`);
+  }
+
   const out = {
     network: network.name,
     chainId: Number((await ethers.provider.getNetwork()).chainId),
     usdc: usdcAddress,
     ConfidentialUSDC: cusdcAddress,
+    ...addresses,
   };
 
   const dir = path.join(__dirname, "..", "deployments");

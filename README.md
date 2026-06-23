@@ -11,18 +11,33 @@ FHE coprocessor node in the trust model — the math is the trust.
 
 ---
 
-## Status
+## Status — all contracts done & tested (28 tests passing)
 
-This repository is being built in the order defined by the Shade spec. Each
-contract is fully tested before the next begins.
+Built in the spec's order; each contract is fully tested in the fhEVM mock.
 
-| Contract            | Status        | Notes |
-| ------------------- | ------------- | ----- |
-| `ConfidentialUSDC`  | ✅ done + tested | Foundation. shield / transfer / transferFrom / approve / unshield |
-| `PayrollVault`      | ⏳ next        | |
-| `PrivateEscrow`     | ⏳            | |
-| `BalanceProver`     | ⏳            | |
-| `StealthSend`       | ⏳            | core differentiator (`eaddress`) |
+| Contract            | Status | What it does |
+| ------------------- | ------ | ------------ |
+| `ConfidentialUSDC`  | ✅ | Foundation. Encrypted balances/allowances/supply. shield / transfer / transferFrom / approve / two-step unshield, + internal-handle overloads for composability. |
+| `PayrollVault`      | ✅ | One run pays many employees; no employee sees another's salary. |
+| `PrivateEscrow`     | ✅ | Encrypted-amount escrow across 6 states; arbiter never learns the amount. |
+| `BalanceProver`     | ✅ | Publishes a verifiable public bool "balance ≥ threshold" without revealing the balance (async public decrypt). |
+| `StealthSend`       | ✅ | **Core differentiator.** Recipient encrypted as `eaddress`; claimed by FHE address-equality. |
+
+```
+$ npx hardhat test
+  BalanceProver ......... 4 passing
+  ConfidentialUSDC ...... 8 passing
+  PayrollVault .......... 6 passing
+  PrivateEscrow ......... 6 passing
+  StealthSend ........... 4 passing
+  28 passing
+```
+
+Architecture note: the feature contracts move cUSDC by passing **internal
+`euint64` handles** into `ConfidentialUSDC.transfer/transferFrom`, granting
+`FHE.allowTransient(handle, address(cUSDC))` first (spec Rule 5). `BalanceProver`
+additionally relies on `cUSDC.authorizeBalanceRead(prover)` so it has ACL to
+compare a user's balance.
 
 Run the test suite:
 
@@ -76,7 +91,11 @@ translations:
      and releases exactly that many USDC. (The withdrawn amount is necessarily
      public — it is a plain ERC20 transfer out.)
 
-The same async pattern will drive `BalanceProver`.
+   The same async pattern drives `BalanceProver`. Both are fully tested in the
+   Hardhat mock: `hre.fhevm.publicDecrypt([handle])` returns
+   `{ abiEncodedClearValues, decryptionProof }` which feed straight into the
+   contract's `checkSignatures` — so the request→publish roundtrip is exercised
+   end-to-end in CI, not just on Sepolia.
 
 ---
 

@@ -63,7 +63,7 @@ describe("ConfidentialUSDC", function () {
     await (await cusdc.connect(alice).shield(1000)).wait();
 
     const { handle, proof } = await enc64(cusdcAddr, alice, 300);
-    await (await cusdc.connect(alice).transfer(bob.address, handle, proof)).wait();
+    await (await cusdc.connect(alice)["transfer(address,bytes32,bytes)"](bob.address, handle, proof)).wait();
 
     expect(await balOf(cusdc, cusdcAddr, alice)).to.eq(700n);
     expect(await balOf(cusdc, cusdcAddr, bob)).to.eq(300n);
@@ -74,7 +74,7 @@ describe("ConfidentialUSDC", function () {
     await (await cusdc.connect(alice).shield(1000)).wait();
 
     const { handle, proof } = await enc64(cusdcAddr, alice, 5000); // more than balance
-    await (await cusdc.connect(alice).transfer(bob.address, handle, proof)).wait();
+    await (await cusdc.connect(alice)["transfer(address,bytes32,bytes)"](bob.address, handle, proof)).wait();
 
     expect(await balOf(cusdc, cusdcAddr, alice)).to.eq(1000n);
     expect(await balOf(cusdc, cusdcAddr, bob)).to.eq(0n);
@@ -88,7 +88,7 @@ describe("ConfidentialUSDC", function () {
     await (await cusdc.connect(alice).approve(bob.address, ap.handle, ap.proof)).wait();
 
     const sp = await enc64(cusdcAddr, bob, 250);
-    await (await cusdc.connect(bob).transferFrom(alice.address, carol.address, sp.handle, sp.proof)).wait();
+    await (await cusdc.connect(bob)["transferFrom(address,address,bytes32,bytes)"](alice.address, carol.address, sp.handle, sp.proof)).wait();
 
     expect(await balOf(cusdc, cusdcAddr, alice)).to.eq(750n);
     expect(await balOf(cusdc, cusdcAddr, carol)).to.eq(250n);
@@ -102,7 +102,7 @@ describe("ConfidentialUSDC", function () {
     await (await cusdc.connect(alice).approve(bob.address, ap.handle, ap.proof)).wait();
 
     const sp = await enc64(cusdcAddr, bob, 500); // exceeds the 100 allowance
-    await (await cusdc.connect(bob).transferFrom(alice.address, carol.address, sp.handle, sp.proof)).wait();
+    await (await cusdc.connect(bob)["transferFrom(address,address,bytes32,bytes)"](alice.address, carol.address, sp.handle, sp.proof)).wait();
 
     expect(await balOf(cusdc, cusdcAddr, alice)).to.eq(1000n);
     expect(await balOf(cusdc, cusdcAddr, carol)).to.eq(0n);
@@ -134,5 +134,30 @@ describe("ConfidentialUSDC", function () {
     const pending = await cusdc.pendingUnshields(1);
     expect(pending.user).to.eq(alice.address);
     expect(pending.finalized).to.eq(false);
+  });
+
+  it("full round trip: USDC -> shield -> transfer -> unshield -> USDC", async function () {
+    const { usdc, cusdc, cusdcAddr, alice, bob } = await deployFixture();
+
+    // alice shields 1000 and sends 400 to bob.
+    await (await cusdc.connect(alice).shield(1000)).wait();
+    const t = await enc64(cusdcAddr, alice, 400);
+    await (await cusdc.connect(alice)["transfer(address,bytes32,bytes)"](bob.address, t.handle, t.proof)).wait();
+    expect(await balOf(cusdc, cusdcAddr, bob)).to.eq(400n);
+
+    // bob unshields 400 back to public USDC (two-step async public decryption).
+    const u = await enc64(cusdcAddr, bob, 400);
+    await (await cusdc.connect(bob).requestUnshield(u.handle, u.proof)).wait();
+    const requestId = await cusdc.unshieldNonce();
+    const pending = await cusdc.pendingUnshields(requestId);
+
+    const res = await fhevm.publicDecrypt([pending.amountHandle]);
+    const bobUsdcBefore = await usdc.balanceOf(bob.address);
+    await (
+      await cusdc.connect(bob).finalizeUnshield(requestId, res.abiEncodedClearValues, res.decryptionProof)
+    ).wait();
+
+    expect(await usdc.balanceOf(bob.address)).to.eq(bobUsdcBefore + 400n);
+    expect(await balOf(cusdc, cusdcAddr, bob)).to.eq(0n);
   });
 });

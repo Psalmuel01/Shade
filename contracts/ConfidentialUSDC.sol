@@ -135,6 +135,49 @@ contract ConfidentialUSDC is Initializable, UUPSUpgradeable, OwnableUpgradeable 
         emit Transfer(from, to);
     }
 
+    // -------------------------------------------------------------------------
+    // Composability: move *internal* encrypted handles between accounts.
+    //
+    // These let other Shade contracts (PayrollVault, PrivateEscrow, StealthSend)
+    // move cUSDC using an already-computed `euint64` handle instead of a
+    // frontend input. The caller MUST grant this contract transient ACL on the
+    // handle first: `FHE.allowTransient(amount, address(cUSDC))` (spec Rule 5).
+    // Both return the amount actually moved (silently 0 on insufficient funds),
+    // readable by the caller, so callers can accumulate exact totals.
+    // -------------------------------------------------------------------------
+
+    /// @notice Move `amount` of the caller's own cUSDC to `to`.
+    function transfer(address to, euint64 amount) external returns (euint64 moved) {
+        ebool enough = FHE.ge(_balances[msg.sender], amount);
+        moved = FHE.select(enough, amount, FHE.asEuint64(0));
+        _moveBalance(msg.sender, to, moved);
+        _allowMoved(moved);
+        emit Transfer(msg.sender, to);
+    }
+
+    /// @notice Operator pulls `amount` from `from` (using `from`'s allowance to
+    ///         the caller) and sends it to `to`.
+    function transferFrom(address from, address to, euint64 amount) external returns (euint64 moved) {
+        euint64 allowed = _allowances[from][msg.sender];
+        ebool canSpend = FHE.and(FHE.ge(allowed, amount), FHE.ge(_balances[from], amount));
+        moved = FHE.select(canSpend, amount, FHE.asEuint64(0));
+
+        _allowances[from][msg.sender] = FHE.sub(allowed, moved);
+        _moveBalance(from, to, moved);
+
+        FHE.allowThis(_allowances[from][msg.sender]);
+        FHE.allow(_allowances[from][msg.sender], from);
+        FHE.allow(_allowances[from][msg.sender], msg.sender);
+        _allowMoved(moved);
+        emit Transfer(from, to);
+    }
+
+    /// @dev Let the calling contract read back exactly how much was moved.
+    function _allowMoved(euint64 moved) internal {
+        FHE.allowThis(moved);
+        FHE.allow(moved, msg.sender);
+    }
+
     /// @dev Internal transfer with silent (no-leak) insufficient-balance handling.
     function _transfer(address from, address to, euint64 amount) internal {
         ebool enough = FHE.ge(_balances[from], amount);
@@ -249,6 +292,14 @@ contract ConfidentialUSDC is Initializable, UUPSUpgradeable, OwnableUpgradeable 
     /// @notice Returns the caller-readable handle to `account`'s encrypted balance.
     function balanceOf(address account) external view returns (euint64) {
         return _balances[account];
+    }
+
+    /// @notice Grant `spender` ACL to read the caller's *current* balance handle.
+    /// @dev Used by BalanceProver so it can compute a comparison over the caller's
+    ///      balance. The grant is tied to the current handle; calling again after a
+    ///      balance change re-grants on the new handle.
+    function authorizeBalanceRead(address spender) external {
+        FHE.allow(_balances[msg.sender], spender);
     }
 
     /// @notice Returns the encrypted allowance handle.
