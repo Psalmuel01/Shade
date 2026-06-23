@@ -270,6 +270,22 @@ export default function ShieldPage() {
           </GlassCard>
         )}
 
+        <Button
+          fullWidth
+          size="lg"
+          isLoading={isTxing}
+          disabled={
+            !amount ||
+            amountRaw === 0n ||
+            !!validationError ||
+            (tab === "unshield" && (!isReady || !isRevealed))
+          }
+          onClick={tab === "shield" ? handleShield : handleUnshield}
+        >
+          {tab === "shield" ? `Shield ${amount || "0"} USDC` : `Request Unshield`}
+        </Button>
+
+
         {tab === "unshield" && isRevealed && (
           <>
             <SectionLabel>Two-step process</SectionLabel>
@@ -280,30 +296,10 @@ export default function ShieldPage() {
           </>
         )}
 
-        {tab === "unshield" && !isRevealed ? (
-          <Button
-            fullWidth
-            size="lg"
-            isLoading={balanceLoading}
-            onClick={reveal}
-          >
-            Reveal Balance
-          </Button>
-        ) : (
-          <Button
-            fullWidth
-            size="lg"
-            isLoading={isTxing}
-            disabled={
-              !amount ||
-              amountRaw === 0n ||
-              !!validationError ||
-              (tab === "unshield" && !isReady)
-            }
-            onClick={tab === "shield" ? handleShield : handleUnshield}
-          >
-            {tab === "shield" ? `Shield ${amount || "0"} USDC` : `Request Unshield`}
-          </Button>
+        {tab === "unshield" && !isRevealed && (
+          <p className="text-xs text-white/40 text-center -mt-2 leading-relaxed">
+            Tap the 🔒 in your balance above to reveal it before unshielding.
+          </p>
         )}
       </div>
     </AppShell>
