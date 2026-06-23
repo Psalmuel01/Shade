@@ -34,7 +34,7 @@ function loadCachedSalaries(cid: number, runId: bigint): string[] | null {
   try { const r = localStorage.getItem(SALARY_KEY(cid, runId)); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 
-type UserTemplate = { id: bigint; employeeCount: number; createdAt: number };
+type UserTemplate = { id: bigint; employeeCount: number; createdAt: number; index: number };
 type RunInfo    = { id: bigint; templateId: bigint; funded: boolean; executed: boolean; cancelled: boolean; executedAt: number };
 
 function makeClient(chainId: number) {
@@ -122,7 +122,7 @@ export default function PayrollPage() {
       for (let i = 1; i <= count; i++) {
         const data = await c.readContract({ address: vaultAddr, abi: PayrollVaultABI, functionName: "getTemplate", args: [BigInt(i)] }) as [string, boolean, bigint, bigint];
         if (data[0].toLowerCase() === address.toLowerCase())
-          results.push({ id: BigInt(i), employeeCount: Number(data[3]), createdAt: Number(data[2]) });
+          results.push({ id: BigInt(i), employeeCount: Number(data[3]), createdAt: Number(data[2]), index: results.length + 1 });
       }
       setUserTemplates(results);
     } finally { setLoadingTemplates(false); }
@@ -276,7 +276,7 @@ export default function PayrollPage() {
     return (
       <AppShell>
         <PageHeader
-          title={`Template #${selectedTemplate.id}`}
+          title={`Template #${selectedTemplate.index}`}
           onBack={() => setView("list")}
           right={
             <Button size="sm" onClick={() => {
@@ -518,7 +518,7 @@ export default function PayrollPage() {
                           <Users className="h-4 w-4 text-amber-400" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-[#FAFAFA]">Template #{String(tpl.id)}</p>
+                          <p className="text-sm font-medium text-[#FAFAFA]">Template #{tpl.index}</p>
                           <p className="text-xs text-white/30 mt-0.5">{tpl.employeeCount} employee{tpl.employeeCount !== 1 ? "s" : ""} · {timeAgo(tpl.createdAt)}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-white/20" />

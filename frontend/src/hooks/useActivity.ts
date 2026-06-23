@@ -155,8 +155,11 @@ export function useActivity() {
   const { address, chainId } = useAccount();
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  // Track the last block we've already indexed so the watcher only fetches the diff
   const lastBlockRef = useRef<bigint>(0n);
+  const readyRef = useRef(false);
+  // Incrementing this triggers a manual re-fetch from current lastBlock
+  const [refreshTick, setRefreshTick] = useState(0);
+  const refresh = () => setRefreshTick((n) => n + 1);
 
   useEffect(() => {
     if (!address || !chainId) return;
@@ -174,11 +177,16 @@ export function useActivity() {
       getAddress(cid, "PayrollVault"),
     ] as `0x${string}`[];
 
-    // Load cache → show instantly
+    // Always load cache for this account (needed by initialFetch merge logic below).
+    // On account change (lastBlockRef === 0n): reset state and show cached items immediately.
+    // On manual refresh (refreshTick > 0): lastBlockRef is already anchored — just re-fetch the diff.
     const cache = loadCache(userAddr, cid);
-    if (cache.items.length > 0) {
+    if (lastBlockRef.current === 0n) {
+      readyRef.current = false;
       setItems(cache.items);
-      lastBlockRef.current = BigInt(cache.lastBlock);
+      if (cache.items.length > 0) {
+        lastBlockRef.current = BigInt(cache.lastBlock);
+      }
     }
 
     let active = true;
@@ -217,8 +225,12 @@ export function useActivity() {
           lastBlockRef.current = latestBlock;
         }
       } catch {
-        // cached items remain visible
+        // cached items remain visible — anchor lastBlockRef so watcher starts safely
+        if (lastBlockRef.current === 0n) {
+          try { lastBlockRef.current = await client!.getBlockNumber(); } catch {}
+        }
       } finally {
+        readyRef.current = true;
         if (active) setIsLoading(false);
       }
     }
@@ -226,7 +238,7 @@ export function useActivity() {
     // --- Block watcher: only fetches the diff since last seen block ---
     const unwatch = client.watchBlockNumber({
       onBlockNumber: async (blockNumber) => {
-        if (!active || blockNumber <= lastBlockRef.current) return;
+        if (!active || !readyRef.current || blockNumber <= lastBlockRef.current) return;
         const fromBlock = lastBlockRef.current + 1n;
         lastBlockRef.current = blockNumber;
         try {
@@ -251,7 +263,7 @@ export function useActivity() {
         }
       },
       poll: true,
-      pollingInterval: 12_000, // one Sepolia block
+      pollingInterval: 6_000, // poll twice per block so new txs appear faster
     });
 
     initialFetch();
@@ -260,7 +272,7 @@ export function useActivity() {
       active = false;
       unwatch();
     };
-  }, [address, chainId]);
+  }, [address, chainId, refreshTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { items, isLoading };
+  return { items, isLoading, refresh };
 }

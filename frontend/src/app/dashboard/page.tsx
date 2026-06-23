@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Send, ShieldCheck, Briefcase, Settings, ScanLine, ArrowDownLeft, ArrowUpRight, Lock, Unlock, Clock, CheckCircle, ExternalLink } from "lucide-react";
+import { ArrowUpDown, Send, ShieldCheck, Briefcase, Settings, ScanLine, ArrowDownLeft, ArrowUpRight, Lock, Unlock, Clock, CheckCircle, ExternalLink, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
@@ -96,8 +96,6 @@ export default function DashboardPage() {
         </div>
 
         {/* Activity */}
-        <SectionLabel>Recent Activity</SectionLabel>
-
         <ActivityFeed address={address} chainId={chainId} />
       </div>
     </AppShell>
@@ -172,43 +170,66 @@ function ActivityRow({ item, chainId }: { item: ActivityItem; chainId?: number }
 }
 
 function ActivityFeed({ address, chainId }: { address?: string; chainId?: number }) {
-  const { items, isLoading } = useActivity();
+  const { items, isLoading, refresh } = useActivity();
 
-  if (isLoading) {
+  const header = (
+    <div className="flex items-center justify-between mb-1">
+      <SectionLabel>Recent Activity</SectionLabel>
+      <button
+        onClick={refresh}
+        disabled={isLoading}
+        className="p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-colors disabled:opacity-30"
+        aria-label="Refresh activity"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+      </button>
+    </div>
+  );
+
+  if (isLoading && items.length === 0) {
     return (
-      <div className="flex flex-col gap-2">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center gap-3 p-3">
-            <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
-            <div className="flex-1 flex flex-col gap-1.5">
-              <Skeleton className="h-3.5 w-32 rounded" />
-              <Skeleton className="h-3 w-20 rounded" />
+      <>
+        {header}
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-3 p-3">
+              <Skeleton className="w-9 h-9 rounded-xl shrink-0" />
+              <div className="flex-1 flex flex-col gap-1.5">
+                <Skeleton className="h-3.5 w-32 rounded" />
+                <Skeleton className="h-3 w-20 rounded" />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-8">
-        <div className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center">
-          <Send className="h-5 w-5 text-white/20" />
+      <>
+        {header}
+        <div className="flex flex-col items-center gap-3 py-8">
+          <div className="w-12 h-12 rounded-2xl glass-card flex items-center justify-center">
+            <Send className="h-5 w-5 text-white/20" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-sm text-white/40">No transactions yet</span>
+            <span className="text-xs text-white/20">Your activity will appear here</span>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-sm text-white/40">No transactions yet</span>
-          <span className="text-xs text-white/20">Your activity will appear here</span>
-        </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col">
-      {items.map((item) => (
-        <ActivityRow key={item.id} item={item} chainId={chainId} />
-      ))}
-    </div>
+    <>
+      {header}
+      <div className="flex flex-col">
+        {items.map((item) => (
+          <ActivityRow key={item.id} item={item} chainId={chainId} />
+        ))}
+      </div>
+    </>
   );
 }
