@@ -30,7 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <FhevmBridge>
           {children}
           <Toaster
-            position="top-center"
+            position="bottom-right"
             toastOptions={{
               style: {
                 background: "rgba(20,20,20,0.95)",
