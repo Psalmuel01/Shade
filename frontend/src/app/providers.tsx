@@ -6,6 +6,7 @@ import { Toaster } from "react-hot-toast";
 import { wagmiConfig } from "@/lib/wagmi";
 import { FhevmContext } from "@/lib/fhevm";
 import { useFhevmProvider } from "@/hooks/useFhevm";
+import { TxQueueProvider } from "@/lib/txQueue";
 import { useState } from "react";
 
 function FhevmBridge({ children }: { children: React.ReactNode }) {
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
+        <TxQueueProvider>
         <FhevmBridge>
           {children}
           <Toaster
@@ -48,6 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             }}
           />
         </FhevmBridge>
+        </TxQueueProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

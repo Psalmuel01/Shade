@@ -23,7 +23,11 @@ export type FhevmInstance = {
   generateKeypair: () => { privateKey: string; publicKey: string };
   createEIP712: (publicKey: string, contractAddresses: string[], startTimestamp: string | number, durationDays: string | number) => EIP712Payload;
   userDecrypt: (handles: HandleContractPair[], privateKey: string, publicKey: string, signature: string, contractAddresses: string[], userAddress: string, startTimestamp: string | number, durationDays: string | number) => Promise<Record<string, bigint | boolean | string>>;
-  publicDecrypt: (handles: (string | Uint8Array)[]) => Promise<Record<string, bigint | boolean | string>>;
+  publicDecrypt: (handles: (string | Uint8Array)[], options?: unknown) => Promise<{
+    clearValues: Record<string, bigint | boolean | string>;
+    abiEncodedClearValues: `0x${string}`;
+    decryptionProof: `0x${string}`;
+  }>;
 };
 
 export const FhevmContext = createContext<{ instance: FhevmInstance | null; isReady: boolean }>({

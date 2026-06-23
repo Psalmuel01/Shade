@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWriteContract, useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
+import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Users, X, Briefcase } from "lucide-react";
@@ -26,7 +27,7 @@ type Tab = "employer" | "employee";
 export default function PayrollPage() {
   const { address, chainId } = useAccount();
   const { instance } = useFhevm();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useTrackedWrite();
   const [tab, setTab] = useState<Tab>("employer");
   const [showCreate, setShowCreate] = useState(false);
   const [employeeAddrs, setEmployeeAddrs] = useState([""]);
@@ -69,7 +70,7 @@ export default function PayrollPage() {
         abi: PayrollVaultABI,
         functionName: "createTemplate",
         args: [validEmployees as `0x${string}`[]],
-      });
+      }, "Create Payroll Template");
 
       const newTemplateId = BigInt((templateCount ?? 0n) as bigint) + 1n;
       const encryptedSalaries: `0x${string}`[] = [];
@@ -87,7 +88,7 @@ export default function PayrollPage() {
         abi: PayrollVaultABI,
         functionName: "createRun",
         args: [newTemplateId, encryptedSalaries, proofs],
-      });
+      }, "Create Payroll Run");
 
       const runId = BigInt((await readRunCount()) ?? 1n);
       await writeContractAsync({
@@ -95,13 +96,13 @@ export default function PayrollPage() {
         abi: PayrollVaultABI,
         functionName: "fundRun",
         args: [runId],
-      });
+      }, "Fund Payroll Run");
       await writeContractAsync({
         address: vaultAddr,
         abi: PayrollVaultABI,
         functionName: "executeRun",
         args: [runId],
-      });
+      }, "Execute Payroll Run");
 
       toast.success("Payroll run complete");
       setShowCreate(false);
@@ -124,7 +125,7 @@ export default function PayrollPage() {
         abi: PayrollVaultABI,
         functionName: "claim",
         args: [],
-      });
+      }, "Claim Payroll");
       toast.success("Payroll claimed");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message.slice(0, 80) : "Failed");

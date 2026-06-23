@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useWriteContract, useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
+import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, ShieldCheck, X } from "lucide-react";
@@ -42,7 +43,7 @@ const STATE_COLORS: Record<number, string> = {
 export default function EscrowPage() {
   const { address, chainId } = useAccount();
   const { instance } = useFhevm();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useTrackedWrite();
   const [showCreate, setShowCreate] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [arbiter, setArbiter] = useState("");
@@ -75,7 +76,7 @@ export default function EscrowPage() {
         abi: PrivateEscrowABI,
         functionName: "createEscrow",
         args: [recipient as `0x${string}`, arbiterAddr, timeoutSecs],
-      });
+      }, "Create Escrow");
 
       // We need the escrow ID from the event, use escrowCount as proxy
       const newId = BigInt((escrowCount ?? 0n) as bigint) + 1n;
@@ -86,7 +87,7 @@ export default function EscrowPage() {
         abi: ConfidentialUSDCABI,
         functionName: "approve",
         args: [escrowAddr, handle, proof],
-      });
+      }, "Approve cUSDC");
 
       const fundEnc = await encrypt64(instance, escrowAddr, address, BigInt(parseFloat(amount) * 1e6));
       await writeContractAsync({
@@ -94,7 +95,7 @@ export default function EscrowPage() {
         abi: PrivateEscrowABI,
         functionName: "fund",
         args: [newId, fundEnc.handle, fundEnc.proof],
-      });
+      }, `Fund Escrow #${newId}`);
 
       toast.success("Escrow created and funded");
       setShowCreate(false);

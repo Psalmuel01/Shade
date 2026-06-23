@@ -2,7 +2,8 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAccount, useWriteContract } from "wagmi";
+import { useAccount } from "wagmi";
+import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { parseUnits } from "viem";
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/layout/AppShell";
@@ -29,7 +30,7 @@ function SendConfirmInner() {
   const router = useRouter();
   const { address, chainId } = useAccount();
   const { instance, isReady } = useFhevm();
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useTrackedWrite();
   const [steps, setSteps] = useState<TxStep[]>([]);
   const [done, setDone] = useState(false);
   const [isTxing, setIsTxing] = useState(false);
@@ -57,7 +58,7 @@ function SendConfirmInner() {
           abi: ConfidentialUSDCABI,
           functionName: "transfer",
           args: [to as `0x${string}`, handle, proof],
-        });
+        }, `Send ${amount} cUSDC`);
         setSteps((s) => s.map((x) => x.id === "tx" ? { ...x, status: "done" } : x));
         setDone(true);
       } catch (err: unknown) {
@@ -78,7 +79,7 @@ function SendConfirmInner() {
           abi: ConfidentialUSDCABI,
           functionName: "approve",
           args: [stealthAddr, approveEnc.handle, approveEnc.proof],
-        });
+        }, "Approve StealthSend");
         setSteps((s) => s.map((x) => x.id === "approve" ? { ...x, status: "done" } : x.id === "encrypt" ? { ...x, status: "active" } : x));
 
         const { amountHandle, recipientHandle, proof } = await encrypt64AndAddress(
@@ -91,7 +92,7 @@ function SendConfirmInner() {
           abi: StealthSendABI,
           functionName: "send",
           args: [amountHandle, recipientHandle, proof],
-        });
+        }, `Stealth Send ${amount} cUSDC`);
         setSteps((s) => s.map((x) => x.id === "tx" ? { ...x, status: "done" } : x));
         setDone(true);
       } catch (err: unknown) {

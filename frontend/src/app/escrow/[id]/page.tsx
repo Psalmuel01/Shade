@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useAccount, useWriteContract, useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
+import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { motion } from "framer-motion";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -27,7 +28,7 @@ export default function EscrowDetailPage() {
   const { address, chainId } = useAccount();
   const cid = chainId ?? 31337;
   const escrowAddr = getAddress(cid, "PrivateEscrow");
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync } = useTrackedWrite();
   const escrowId = BigInt(id as string);
 
   const { data: escrow, refetch } = useReadContract({
@@ -56,6 +57,15 @@ export default function EscrowDetailPage() {
   const isRecipient = address?.toLowerCase() === recipient.toLowerCase();
   const isArbiter = arbiter !== "0x0000000000000000000000000000000000000000" && address?.toLowerCase() === arbiter.toLowerCase();
 
+  const ACTION_LABELS: Record<string, string> = {
+    release: "Release Escrow",
+    dispute: "Dispute Escrow",
+    resolveToRecipient: "Resolve → Recipient",
+    resolveToDepositor: "Resolve → Depositor",
+    timeout: "Trigger Timeout",
+    cancel: "Cancel Escrow",
+  };
+
   async function act(fn: string) {
     try {
       await writeContractAsync({
@@ -63,8 +73,8 @@ export default function EscrowDetailPage() {
         abi: PrivateEscrowABI,
         functionName: fn as "release",
         args: [escrowId],
-      });
-      toast.success(`${fn} successful`);
+      }, ACTION_LABELS[fn] ?? fn);
+      toast.success(`${ACTION_LABELS[fn] ?? fn} submitted`);
       refetch();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message.slice(0, 80) : "Failed");

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Send, ShieldCheck, Briefcase, Settings } from "lucide-react";
+import { ArrowUpDown, Send, ShieldCheck, Briefcase, Settings, ScanLine } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
@@ -20,6 +20,7 @@ const QUICK_ACTIONS = [
   { href: "/send", icon: Send, label: "Send" },
   { href: "/escrow", icon: ShieldCheck, label: "Escrow" },
   { href: "/payroll", icon: Briefcase, label: "Payroll" },
+  { href: "/prove", icon: ScanLine, label: "Prove" },
 ];
 
 export default function DashboardPage() {
@@ -75,7 +76,7 @@ export default function DashboardPage() {
         </GlassCard>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-2">
           {QUICK_ACTIONS.map(({ href, icon: Icon, label }) => (
             <Link key={href} href={href}>
               <motion.div

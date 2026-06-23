@@ -13,6 +13,7 @@ interface NumericKeypadProps {
   maxValue?: string;
   onMax?: () => void;
   error?: string;
+  disabled?: boolean;
 }
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "⌫"];
@@ -26,6 +27,7 @@ export function NumericKeypad({
   maxValue,
   onMax,
   error,
+  disabled = false,
 }: NumericKeypadProps) {
   function press(key: string) {
     if (key === "⌫") {
@@ -80,17 +82,17 @@ export function NumericKeypad({
       </div>
 
       {/* Keys */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className={cn("grid grid-cols-3 gap-2", disabled && "opacity-30 pointer-events-none")}>
         {KEYS.map((key) => (
           <motion.button
             key={key}
-            whileTap={{ scale: 0.92, backgroundColor: "rgba(255,255,255,0.12)" }}
-            onClick={() => press(key)}
+            whileTap={disabled ? {} : { scale: 0.92, backgroundColor: "rgba(255,255,255,0.12)" }}
+            onClick={() => !disabled && press(key)}
             className={cn(
               "flex items-center justify-center h-14 rounded-2xl",
               "bg-white/[0.05] border border-white/[0.06] text-[#FAFAFA]",
               "text-xl font-medium transition-colors duration-100 select-none",
-              "hover:bg-white/[0.09] active:bg-white/[0.12]",
+              !disabled && "hover:bg-white/[0.09] active:bg-white/[0.12]",
             )}
           >
             {key === "⌫" ? <Delete className="h-5 w-5 text-white/50" /> : key}
