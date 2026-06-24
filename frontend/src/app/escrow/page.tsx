@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, useReadContract } from "wagmi";
+import { useAccount, useReadContract, usePublicClient } from "wagmi";
 import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
 import { Plus, ShieldCheck } from "lucide-react";
@@ -43,6 +43,7 @@ const STATE_COLORS: Record<number, string> = {
 export default function EscrowPage() {
   const { address, chainId } = useAccount();
   const { instance } = useFhevm();
+  const client = usePublicClient();
   const { writeContractAsync } = useTrackedWrite();
   const [showCreate, setShowCreate] = useState(false);
   const [recipient, setRecipient] = useState("");
@@ -63,7 +64,7 @@ export default function EscrowPage() {
   });
 
   async function createEscrow() {
-    if (!address || !instance || !isAddress(recipient) || !amount) return;
+    if (!address || !instance || !isAddress(recipient) || !amount || !client) return;
     setIsCreating(true);
     try {
       const timeoutSecs = BigInt(TIMEOUT_OPTIONS[timeoutIdx].seconds);
@@ -71,25 +72,36 @@ export default function EscrowPage() {
         ? (arbiter as `0x${string}`)
         : "0x0000000000000000000000000000000000000000";
 
-      const escrowId = await writeContractAsync({
+      // Step 1: Create escrow shell and wait for confirmation
+      const createHash = await writeContractAsync({
         address: escrowAddr,
         abi: PrivateEscrowABI,
         functionName: "createEscrow",
         args: [recipient as `0x${string}`, arbiterAddr, timeoutSecs],
       }, "Create Escrow");
+      await client.waitForTransactionReceipt({ hash: createHash });
 
-      // We need the escrow ID from the event, use escrowCount as proxy
-      const newId = BigInt((escrowCount ?? 0n) as bigint) + 1n;
-      const { handle, proof } = await encrypt64(instance, escrowAddr, address, BigInt(parseFloat(amount) * 1e6));
+      // Read the actual new ID from the confirmed on-chain state
+      const newId = await client.readContract({
+        address: escrowAddr,
+        abi: PrivateEscrowABI,
+        functionName: "escrowCount",
+      }) as bigint;
 
-      await writeContractAsync({
+      // Step 2: Approve — must be confirmed before fund can transferFrom
+      // Proof must be bound to cusdcAddr (the contract that calls FHE.fromExternal for approve)
+      const amountRaw = BigInt(Math.round(parseFloat(amount) * 1e6));
+      const { handle, proof } = await encrypt64(instance, cusdcAddr, address, amountRaw);
+      const approveHash = await writeContractAsync({
         address: cusdcAddr,
         abi: ConfidentialUSDCABI,
         functionName: "approve",
         args: [escrowAddr, handle, proof],
       }, "Approve cUSDC");
+      await client.waitForTransactionReceipt({ hash: approveHash });
 
-      const fundEnc = await encrypt64(instance, escrowAddr, address, BigInt(parseFloat(amount) * 1e6));
+      // Step 3: Fund the escrow
+      const fundEnc = await encrypt64(instance, escrowAddr, address, amountRaw);
       await writeContractAsync({
         address: escrowAddr,
         abi: PrivateEscrowABI,
