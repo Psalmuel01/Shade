@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect } from "wagmi";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { ShadeLogoMark } from "@/components/icons/ShadeLogoMark";
-import { ArrowRight, ArrowUpDown, Briefcase, ShieldCheck, ScanLine, Shield, ExternalLink, Lock } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Briefcase, ShieldCheck, ScanLine, Shield, ExternalLink, Lock, Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
@@ -61,6 +62,7 @@ export default function LandingPage() {
   const router = useRouter();
   const { connect, connectors } = useConnect();
   const justConnected = useRef(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Only redirect to dashboard when the user explicitly clicked Launch App
   useEffect(() => {
@@ -89,14 +91,54 @@ export default function LandingPage() {
             <ShadeLogoMark size={28} showBg />
             <span className="text-base font-semibold">Shade</span>
           </div>
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-7">
+            <Link href="/docs" className="text-sm text-white/55 hover:text-white transition-colors">Docs</Link>
+            <Link href="/about" className="text-sm text-white/55 hover:text-white transition-colors">About</Link>
+            <button
+              onClick={launch}
+              className="flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold transition-colors"
+            >
+              {isConnected ? "Go to App" : "Launch App"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Mobile hamburger */}
           <button
-            onClick={launch}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold transition-colors"
+            className="md:hidden p-2 rounded-lg text-white/60 hover:text-white transition-colors"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
           >
-            {isConnected ? "Go to App" : "Launch App"}
-            <ArrowRight className="h-4 w-4" />
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
+
+        {/* Mobile dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="md:hidden overflow-hidden border-t border-white/[0.06] bg-[#080808]/95 backdrop-blur-xl"
+            >
+              <div className="px-6 py-5 flex flex-col gap-5">
+                <Link href="/docs" className="text-sm text-white/60 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>Docs</Link>
+                <Link href="/about" className="text-sm text-white/60 hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>About</Link>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); launch(); }}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold transition-colors"
+                >
+                  {isConnected ? "Go to App" : "Launch App"}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero */}
