@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAccount, useReadContract, usePublicClient } from "wagmi";
 import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
@@ -11,23 +12,18 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { NumericKeypad } from "@/components/ui/NumericKeypad";
 import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
-import { SectionLabel } from "@/components/ui/SectionLabel";
 import { AddressDisplay } from "@/components/ui/AddressDisplay";
 import { ESCROW_STATE_LABEL } from "@/lib/format";
 import { PrivateEscrowABI } from "@/lib/abis/PrivateEscrow";
-import { ConfidentialUSDCABI } from "@/lib/abis/ConfidentialUSDC";
 import { getAddress } from "@/lib/addresses";
-import { useFhevm } from "@/lib/fhevm";
-import { encrypt64 } from "@/lib/shade";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
 const TIMEOUT_OPTIONS = [
-  { label: "1h", seconds: 3600 },
+  { label: "1h",  seconds: 3600 },
   { label: "24h", seconds: 86400 },
-  { label: "7d", seconds: 604800 },
+  { label: "7d",  seconds: 604800 },
   { label: "30d", seconds: 2592000 },
 ];
 
@@ -43,19 +39,17 @@ const STATE_COLORS: Record<number, string> = {
 
 export default function EscrowPage() {
   const { address, chainId } = useAccount();
-  const { instance } = useFhevm();
+  const router = useRouter();
   const client = usePublicClient();
   const { writeContractAsync } = useTrackedWrite();
   const [showCreate, setShowCreate] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [arbiter, setArbiter] = useState("");
   const [timeoutIdx, setTimeoutIdx] = useState(1);
-  const [amount, setAmount] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const cid = chainId ?? 31337;
   const escrowAddr = getAddress(cid, "PrivateEscrow");
-  const cusdcAddr = getAddress(cid, "ConfidentialUSDC");
 
   const { data: escrowCount } = useReadContract({
     address: escrowAddr,
@@ -65,7 +59,7 @@ export default function EscrowPage() {
   });
 
   async function createEscrow() {
-    if (!address || !instance || !isAddress(recipient) || !amount || !client) return;
+    if (!address || !isAddress(recipient) || !client) return;
     setIsCreating(true);
     try {
       const timeoutSecs = BigInt(TIMEOUT_OPTIONS[timeoutIdx].seconds);
@@ -73,47 +67,24 @@ export default function EscrowPage() {
         ? (arbiter as `0x${string}`)
         : "0x0000000000000000000000000000000000000000";
 
-      // Step 1: Create escrow shell and wait for confirmation
-      const createHash = await writeContractAsync({
+      const hash = await writeContractAsync({
         address: escrowAddr,
         abi: PrivateEscrowABI,
         functionName: "createEscrow",
         args: [recipient as `0x${string}`, arbiterAddr, timeoutSecs],
       }, "Create Escrow");
-      await client.waitForTransactionReceipt({ hash: createHash });
+      await client.waitForTransactionReceipt({ hash });
 
-      // Read the actual new ID from the confirmed on-chain state
       const newId = await client.readContract({
         address: escrowAddr,
         abi: PrivateEscrowABI,
         functionName: "escrowCount",
       }) as bigint;
 
-      // Step 2: Approve — must be confirmed before fund can transferFrom
-      // Proof must be bound to cusdcAddr (the contract that calls FHE.fromExternal for approve)
-      const amountRaw = BigInt(Math.round(parseFloat(amount) * 1e6));
-      const { handle, proof } = await encrypt64(instance, cusdcAddr, address, amountRaw);
-      const approveHash = await writeContractAsync({
-        address: cusdcAddr,
-        abi: ConfidentialUSDCABI,
-        functionName: "approve",
-        args: [escrowAddr, handle, proof],
-      }, "Approve cUSDC");
-      await client.waitForTransactionReceipt({ hash: approveHash });
-
-      // Step 3: Fund the escrow
-      const fundEnc = await encrypt64(instance, escrowAddr, address, amountRaw);
-      await writeContractAsync({
-        address: escrowAddr,
-        abi: PrivateEscrowABI,
-        functionName: "fund",
-        args: [newId, fundEnc.handle, fundEnc.proof],
-      }, `Fund Escrow #${newId}`);
-
-      toast.success("Escrow created and funded");
+      toast.success(`Escrow #${newId} created — fund it to activate`);
       setShowCreate(false);
       setRecipient("");
-      setAmount("");
+      router.push(`/escrow/${newId}`);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message.slice(0, 80) : "Failed");
     } finally {
@@ -156,16 +127,25 @@ export default function EscrowPage() {
       </div>
 
       <Modal open={showCreate} onClose={() => !isCreating && setShowCreate(false)} title="New Escrow">
-        <Input label="Recipient" placeholder="0x..." value={recipient} onChange={(e) => setRecipient(e.target.value)} />
+        <Input
+          label="Recipient"
+          placeholder="0x..."
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value)}
+        />
 
         <div className="flex flex-col gap-1.5">
-          <Input label="Arbiter (optional)" placeholder="0x... or leave blank" value={arbiter} onChange={(e) => setArbiter(e.target.value)} />
-          {/* Warn clearly when no valid arbiter is set */}
+          <Input
+            label="Arbiter (optional)"
+            placeholder="0x... or leave blank"
+            value={arbiter}
+            onChange={(e) => setArbiter(e.target.value)}
+          />
           {!isAddress(arbiter) && (
             <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-orange-500/[0.08] border border-orange-500/20">
               <AlertTriangle className="h-3.5 w-3.5 text-orange-400 shrink-0 mt-0.5" />
               <p className="text-xs text-orange-400/80 leading-relaxed">
-                Without an arbiter the recipient has <strong>no on-chain recourse</strong> if you withhold payment. Only omit this for fully trusted parties.
+                Without an arbiter the recipient has <strong>no on-chain recourse</strong> if you withhold payment.
               </p>
             </div>
           )}
@@ -178,7 +158,9 @@ export default function EscrowPage() {
               <button
                 key={o.label}
                 onClick={() => setTimeoutIdx(i)}
-                className={`py-2 rounded-xl text-sm font-medium transition-all ${i === timeoutIdx ? "bg-amber-500 text-black" : "bg-white/[0.05] text-white/40 hover:text-white/60"}`}
+                className={`py-2 rounded-xl text-sm font-medium transition-all ${
+                  i === timeoutIdx ? "bg-amber-500 text-black" : "bg-white/[0.05] text-white/40 hover:text-white/60"
+                }`}
               >
                 {o.label}
               </button>
@@ -186,12 +168,18 @@ export default function EscrowPage() {
           </div>
         </div>
 
-        <GlassCard padding="sm">
-          <NumericKeypad value={amount} onChange={setAmount} />
-        </GlassCard>
+        <p className="text-xs text-white/30 text-center leading-relaxed">
+          You&apos;ll fund the escrow on the next screen.
+        </p>
 
-        <Button fullWidth size="lg" isLoading={isCreating} disabled={!isAddress(recipient) || !amount} onClick={createEscrow}>
-          Create & Fund
+        <Button
+          fullWidth
+          size="lg"
+          isLoading={isCreating}
+          disabled={!isAddress(recipient)}
+          onClick={createEscrow}
+        >
+          Create Escrow
         </Button>
       </Modal>
     </AppShell>
@@ -207,9 +195,8 @@ function EscrowCard({ id, escrowAddr, address }: { id: bigint; escrowAddr: `0x${
   });
 
   if (!escrow) return null;
-  const [depositor, recipient, arbiter, state] = escrow;
+  const [depositor, , , state] = escrow;
   const stateNum = Number(state);
-  const isParty = address.toLowerCase() === depositor.toLowerCase() || address.toLowerCase() === recipient.toLowerCase();
 
   return (
     <Link href={`/escrow/${id}`}>

@@ -25,6 +25,11 @@
       "address": "0x2a87Fb8E1d54126ab96E02A1Ab408bDecff5634e",
       "txHash": "0x3c50c2a472f7c2a8fde97df5363f572d7f628e925ceedfa4a1e9700036e6cdc3",
       "kind": "uups"
+    },
+    {
+      "address": "0xE99c1dd0F8d6696e30D285C5229E058218a0F7C1",
+      "txHash": "0xf4aee9226a35262d9b8c139a74858b723d6a00f1bd59b001a989761bc845fcba",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -913,6 +918,200 @@
             "underlying": "t_bytes32"
           },
           "t_userDefinedValueType(euint64)47917": {
+            "label": "euint64",
+            "numberOfBytes": "32",
+            "underlying": "t_bytes32"
+          },
+          "t_bytes32": {
+            "label": "bytes32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "8a015a5cb0304ac6bbfe3358711f4ee1e72260e05d77bf537b39fc0536f46b80": {
+      "address": "0xbef945Ff5e150A49bA1c7889b0892e0201C3fD7c",
+      "txHash": "0x7053f70e61b96584a8c1c8d5c53a7669bc3a9ca4c07379475c727e65b88036a9",
+      "layout": {
+        "solcVersion": "0.8.27",
+        "storage": [
+          {
+            "label": "cusdc",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_contract(ConfidentialUSDC)45870",
+            "contract": "PrivateEscrow",
+            "src": "contracts/PrivateEscrow.sol:27"
+          },
+          {
+            "label": "escrowCount",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "PrivateEscrow",
+            "src": "contracts/PrivateEscrow.sol:54"
+          },
+          {
+            "label": "_escrows",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_struct(Escrow)46819_storage)",
+            "contract": "PrivateEscrow",
+            "src": "contracts/PrivateEscrow.sol:54"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)10738_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)10444_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_contract(ConfidentialUSDC)45870": {
+            "label": "contract ConfidentialUSDC",
+            "numberOfBytes": "20"
+          },
+          "t_enum(EscrowState)46800": {
+            "label": "enum PrivateEscrow.EscrowState",
+            "members": [
+              "CREATED",
+              "FUNDED",
+              "COMPLETED",
+              "RELEASED",
+              "DISPUTED",
+              "REFUNDED",
+              "CANCELLED"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_uint256,t_struct(Escrow)46819_storage)": {
+            "label": "mapping(uint256 => struct PrivateEscrow.Escrow)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Escrow)46819_storage": {
+            "label": "struct PrivateEscrow.Escrow",
+            "members": [
+              {
+                "label": "depositor",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "recipient",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "arbiter",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "amount",
+                "type": "t_userDefinedValueType(euint64)48076",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "state",
+                "type": "t_enum(EscrowState)46800",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "createdAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "timeoutAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "completedAt",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "7"
+              }
+            ],
+            "numberOfBytes": "256"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_userDefinedValueType(euint64)48076": {
             "label": "euint64",
             "numberOfBytes": "32",
             "underlying": "t_bytes32"

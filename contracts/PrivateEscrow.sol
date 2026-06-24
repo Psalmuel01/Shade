@@ -148,7 +148,7 @@ contract PrivateEscrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         require(msg.sender == e.recipient, "not recipient");
         require(e.state == EscrowState.COMPLETED, "not completed");
         require(block.timestamp >= e.completedAt + RELEASE_WINDOW, "release window still active");
-        require(e.arbiter != address(0), "no arbiter — use claimAfterWindow");
+        require(e.arbiter != address(0), "no arbiter - use claimAfterWindow");
         e.state = EscrowState.DISPUTED;
         emit EscrowDisputed(id, msg.sender, proofURI);
     }
@@ -160,7 +160,7 @@ contract PrivateEscrow is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         require(msg.sender == e.recipient, "not recipient");
         require(e.state == EscrowState.COMPLETED, "not completed");
         require(block.timestamp >= e.completedAt + RELEASE_WINDOW, "release window still active");
-        require(e.arbiter == address(0), "arbiter set — use disputeWithProof");
+        require(e.arbiter == address(0), "arbiter set - use disputeWithProof");
         e.state = EscrowState.RELEASED;
         _payout(e.amount, e.recipient);
         emit EscrowReleased(id);
