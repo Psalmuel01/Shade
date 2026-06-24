@@ -24,8 +24,8 @@ const STEPS = [
   },
   {
     num: "03",
-    title: "Prove Without Revealing",
-    desc: "Generate a verifiable on-chain proof that your balance exceeds a threshold — without disclosing the balance or the threshold.",
+    title: "Stay Auditable",
+    desc: "Anyone can verify who paid whom, on which chain, when — and prove balance threshold, all without ever knowing the amount.",
     icon: ScanLine,
   },
 ];
@@ -34,25 +34,25 @@ const FEATURES = [
   {
     icon: ArrowUpDown,
     title: "Private Payments",
-    desc: "Standard and stealth sends. The recipient is visible; the amount is permanently hidden from everyone including validators.",
+    desc: "Sender and receiver are public. The amount is not. Need more privacy? Stealth Send also encrypts the recipient on-chain.",
     color: "text-amber-400 bg-amber-500/10",
   },
   {
     icon: Briefcase,
     title: "Confidential Payroll",
-    desc: "Pay employees with encrypted per-person salaries. No colleague can see another's compensation on-chain.",
+    desc: "Employee addresses are on-chain. Salary amounts are not. No colleague can read another's, even on a public explorer.",
     color: "text-blue-400 bg-blue-500/10",
   },
   {
     icon: ShieldCheck,
     title: "Encrypted Escrow",
-    desc: "Funds are locked until release conditions are met. The amount stays encrypted even through dispute arbitration.",
+    desc: "The locked amount stays encrypted through creation, dispute, and release. Parties and finality are public. The number is private.",
     color: "text-purple-400 bg-purple-500/10",
   },
   {
     icon: ScanLine,
     title: "Balance Proof",
-    desc: "Prove solvency on-chain without revealing your balance or the threshold. Share a public verification link with anyone.",
+    desc: "Prove your balance exceeds a threshold without revealing the balance or the threshold. One verifiable boolean, publicly readable.",
     color: "text-green-400 bg-green-500/10",
   },
 ];
@@ -168,9 +168,9 @@ export default function LandingPage() {
             transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
           >
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight leading-[1.1]">
-              Encrypted by math,
+              The amount is
               <br />
-              <span className="text-amber-400">not by trust.</span>
+              <span className="text-amber-400">the only secret.</span>
             </h1>
             <p className="text-base md:text-lg text-white/50 max-w-xl mx-auto leading-relaxed">
               Send, receive, and pay with USDC where only you see the amounts.
@@ -221,7 +221,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-mono text-amber-400/60 uppercase tracking-widest mb-3">How it works</p>
-            <h2 className="text-2xl md:text-3xl font-semibold">Three steps to private finance</h2>
+            <h2 className="text-2xl md:text-3xl font-semibold">Private payments in three steps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {STEPS.map(({ num, title, desc, icon: Icon }, i) => (
@@ -254,7 +254,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs font-mono text-amber-400/60 uppercase tracking-widest mb-3">Features</p>
-            <h2 className="text-2xl md:text-3xl font-semibold">Everything encrypted, end to end</h2>
+            <h2 className="text-2xl md:text-3xl font-semibold">The relationship stays public. The number doesn&apos;t.</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {FEATURES.map(({ icon: Icon, title, desc, color }, i) => (
@@ -293,15 +293,15 @@ export default function LandingPage() {
               <Shield className="h-7 w-7 text-amber-400" strokeWidth={1.5} />
             </div>
             <div className="flex flex-col gap-3">
-              <h2 className="text-2xl md:text-3xl font-semibold">The math is the trust.</h2>
+              <h2 className="text-2xl md:text-3xl font-semibold">Privacy that works for real payments.</h2>
               <p className="text-white/45 leading-relaxed max-w-lg">
-                FHE runs natively inside the EVM via Zama&apos;s coprocessor. There are no off-chain relayers in the
-                security model, no bridge custody, and no operator keys — encryption is enforced by the protocol
-                itself at the mathematical level.
+                Most privacy tools hide identity and break compliance. Shade encrypts only the amount —
+                the relationship stays auditable, on the same chain, with the same finality.
+                No off-chain operators, no custodians, no separate infrastructure.
               </p>
             </div>
             <div className="px-4 py-2 rounded-full border border-amber-500/20 bg-amber-500/[0.05]">
-              <span className="text-xs text-amber-400/70 font-mono">EVM-native FHE · Zama fhEVM v0.11 · Sepolia</span>
+              <span className="text-xs text-amber-400/70 font-mono">Zama fhEVM v0.11 · Sepolia testnet</span>
             </div>
           </motion.div>
         </div>
@@ -314,7 +314,7 @@ export default function LandingPage() {
             <ShadeLogoMark size={26} showBg />
             <div>
               <p className="text-sm font-semibold">Shade</p>
-              <p className="text-xs text-white/30">Encrypted by math, not by trust</p>
+              <p className="text-xs text-white/30">The amount is the only secret</p>
             </div>
           </div>
           <div className="flex items-center gap-7">
