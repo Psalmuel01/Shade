@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAccount, useReadContract, usePublicClient } from "wagmi";
 import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
-import { Plus, ShieldCheck } from "lucide-react";
+import { Plus, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -34,10 +34,11 @@ const TIMEOUT_OPTIONS = [
 const STATE_COLORS: Record<number, string> = {
   0: "text-white/40",
   1: "text-amber-400",
-  2: "text-green-400",
-  3: "text-red-400",
-  4: "text-white/40",
-  5: "text-white/20",
+  2: "text-blue-400",
+  3: "text-green-400",
+  4: "text-red-400",
+  5: "text-white/40",
+  6: "text-white/20",
 };
 
 export default function EscrowPage() {
@@ -154,12 +155,24 @@ export default function EscrowPage() {
         )}
       </div>
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Escrow">
+      <Modal open={showCreate} onClose={() => !isCreating && setShowCreate(false)} title="New Escrow">
         <Input label="Recipient" placeholder="0x..." value={recipient} onChange={(e) => setRecipient(e.target.value)} />
-        <Input label="Arbiter (optional)" placeholder="0x... or leave blank" value={arbiter} onChange={(e) => setArbiter(e.target.value)} />
+
+        <div className="flex flex-col gap-1.5">
+          <Input label="Arbiter (optional)" placeholder="0x... or leave blank" value={arbiter} onChange={(e) => setArbiter(e.target.value)} />
+          {/* Warn clearly when no valid arbiter is set */}
+          {!isAddress(arbiter) && (
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-orange-500/[0.08] border border-orange-500/20">
+              <AlertTriangle className="h-3.5 w-3.5 text-orange-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-orange-400/80 leading-relaxed">
+                Without an arbiter the recipient has <strong>no on-chain recourse</strong> if you withhold payment. Only omit this for fully trusted parties.
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-xs text-white/50 uppercase tracking-wider">Timeout</span>
+          <span className="text-xs text-white/50 uppercase tracking-wider">Timeout — depositor reclaims if no delivery</span>
           <div className="grid grid-cols-4 gap-2">
             {TIMEOUT_OPTIONS.map((o, i) => (
               <button

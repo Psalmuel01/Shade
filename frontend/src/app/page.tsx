@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect } from "wagmi";
 import { motion } from "framer-motion";
@@ -59,12 +60,21 @@ export default function LandingPage() {
   const { isConnected } = useAccount();
   const router = useRouter();
   const { connect, connectors } = useConnect();
+  const justConnected = useRef(false);
+
+  // Only redirect to dashboard when the user explicitly clicked Launch App
+  useEffect(() => {
+    if (isConnected && justConnected.current) {
+      router.replace("/dashboard");
+    }
+  }, [isConnected, router]);
 
   function launch() {
     if (isConnected) {
       router.push("/dashboard");
       return;
     }
+    justConnected.current = true;
     if (connectors[0]) connect({ connector: connectors[0] });
   }
 

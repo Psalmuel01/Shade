@@ -35,8 +35,9 @@ export function timeAgo(timestamp: number): string {
 export const ESCROW_STATE_LABEL: Record<number, string> = {
   0: "Created",
   1: "Funded",
-  2: "Released",
-  3: "Disputed",
-  4: "Refunded",
-  5: "Cancelled",
+  2: "Completed",
+  3: "Released",
+  4: "Disputed",
+  5: "Refunded",
+  6: "Cancelled",
 };
