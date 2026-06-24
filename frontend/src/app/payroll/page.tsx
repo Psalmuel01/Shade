@@ -5,8 +5,8 @@ import { useAccount, useReadContract, usePublicClient } from "wagmi";
 import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress, createPublicClient, http } from "viem";
 import { sepolia, hardhat } from "viem/chains";
-import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Users, X, Briefcase, ChevronRight, CheckCircle, Clock, XCircle, Play } from "lucide-react";
+import { Plus, Users, Briefcase, ChevronRight, CheckCircle, Clock, XCircle, Play } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -290,7 +290,7 @@ export default function PayrollPage() {
           }
         />
 
-        <div className="flex flex-col gap-5 px-4">
+        <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
           {/* Employees */}
           <GlassCard padding="md">
             <div className="flex flex-col gap-3">
@@ -340,92 +340,64 @@ export default function PayrollPage() {
           )}
         </div>
 
-        {/* New-run sheet */}
-        <AnimatePresence>
-          {sheet === "new-run" && (
+        {/* New-run modal */}
+        <Modal open={sheet === "new-run"} onClose={() => { if (!isSheetBusy) setSheet(null); }} title="Set Salaries — New Run">
+          <div className="flex gap-2 flex-wrap">
+            {templateEmployees.map((emp, i) => (
+              <button key={emp} onClick={() => setCurrentSalaryIdx(i)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${i === currentSalaryIdx ? "bg-amber-500 text-black" : "bg-white/[0.06] text-white/40"}`}>
+                #{i + 1}{salaries[i] ? ` · ${salaries[i]}` : ""}
+              </button>
+            ))}
+          </div>
+          <div className="text-xs text-white/30"><AddressDisplay address={templateEmployees[currentSalaryIdx] ?? ""} chars={10} /></div>
+
+          <GlassCard padding="sm">
+            <NumericKeypad value={salaries[currentSalaryIdx] ?? ""} onChange={(v) => { const n = [...salaries]; n[currentSalaryIdx] = v; setSalaries(n); }} unit="cUSDC" />
+          </GlassCard>
+
+          {sheetSteps.length > 0 && <GlassCard padding="sm"><TxStatus steps={sheetSteps} /></GlassCard>}
+
+          <p className="text-xs text-white/30 text-center">Run will be created on-chain. You can fund and execute separately.</p>
+
+          <Button fullWidth size="lg" isLoading={isSheetBusy} disabled={salaries.some((s) => !s)} onClick={createRun}>
+            Create Run
+          </Button>
+        </Modal>
+
+        {/* Fund modal */}
+        <Modal open={sheet === "fund" && !!fundTargetRun} onClose={() => { if (!isSheetBusy) setSheet(null); }} title={`Fund Run #${String(fundTargetRun?.id ?? "")}`}>
+          {fundSalaries.length > 0 ? (
             <>
-              <motion.div className="fixed inset-0 bg-black/60 z-40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isSheetBusy && setSheet(null)} />
-              <motion.div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }}>
-                <div className="glass-card rounded-t-3xl p-5 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto no-scrollbar">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-[#FAFAFA]">Set Salaries — New Run</h3>
-                    <button onClick={() => !isSheetBusy && setSheet(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06]"><X className="h-4 w-4 text-white/40" /></button>
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    {templateEmployees.map((emp, i) => (
-                      <button key={emp} onClick={() => setCurrentSalaryIdx(i)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${i === currentSalaryIdx ? "bg-amber-500 text-black" : "bg-white/[0.06] text-white/40"}`}>
-                        #{i + 1}{salaries[i] ? ` · ${salaries[i]}` : ""}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="text-xs text-white/30"><AddressDisplay address={templateEmployees[currentSalaryIdx] ?? ""} chars={10} /></div>
-
-                  <GlassCard padding="sm">
-                    <NumericKeypad value={salaries[currentSalaryIdx] ?? ""} onChange={(v) => { const n = [...salaries]; n[currentSalaryIdx] = v; setSalaries(n); }} unit="cUSDC" />
-                  </GlassCard>
-
-                  {sheetSteps.length > 0 && <GlassCard padding="sm"><TxStatus steps={sheetSteps} /></GlassCard>}
-
-                  <p className="text-xs text-white/30 text-center">Run will be created on-chain. You can fund and execute separately.</p>
-
-                  <Button fullWidth size="lg" isLoading={isSheetBusy} disabled={salaries.some((s) => !s)} onClick={createRun}>
-                    Create Run
-                  </Button>
+              <p className="text-xs text-white/40">Salary breakdown from your last session:</p>
+              {templateEmployees.map((emp, i) => (
+                <div key={emp} className="flex items-center justify-between">
+                  <AddressDisplay address={emp} chars={8} />
+                  <span className="font-mono text-sm text-amber-400">{fundSalaries[i] ?? "—"} cUSDC</span>
                 </div>
-              </motion.div>
+              ))}
+              <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
+                <span className="text-xs text-white/40">Total</span>
+                <span className="font-mono text-sm font-semibold text-[#FAFAFA]">
+                  {fundSalaries.reduce((a, s) => a + parseFloat(s || "0"), 0).toFixed(2)} cUSDC
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-orange-400/80">No cached salaries found. Enter the total payroll amount to approve the vault.</p>
+              <GlassCard padding="sm">
+                <NumericKeypad value={manualTotal} onChange={setManualTotal} unit="cUSDC" />
+              </GlassCard>
             </>
           )}
-        </AnimatePresence>
 
-        {/* Fund sheet */}
-        <AnimatePresence>
-          {sheet === "fund" && fundTargetRun && (
-            <>
-              <motion.div className="fixed inset-0 bg-black/60 z-40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isSheetBusy && setSheet(null)} />
-              <motion.div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50" initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 300 }}>
-                <div className="glass-card rounded-t-3xl p-5 flex flex-col gap-4 max-h-[85dvh] overflow-y-auto no-scrollbar">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-[#FAFAFA]">Fund Run #{String(fundTargetRun.id)}</h3>
-                    <button onClick={() => !isSheetBusy && setSheet(null)} className="p-1.5 rounded-lg hover:bg-white/[0.06]"><X className="h-4 w-4 text-white/40" /></button>
-                  </div>
+          {sheetSteps.length > 0 && <GlassCard padding="sm"><TxStatus steps={sheetSteps} /></GlassCard>}
 
-                  {fundSalaries.length > 0 ? (
-                    <>
-                      <p className="text-xs text-white/40">Salary breakdown from your last session:</p>
-                      {templateEmployees.map((emp, i) => (
-                        <div key={emp} className="flex items-center justify-between">
-                          <AddressDisplay address={emp} chars={8} />
-                          <span className="font-mono text-sm text-amber-400">{fundSalaries[i] ?? "—"} cUSDC</span>
-                        </div>
-                      ))}
-                      <div className="flex items-center justify-between pt-1 border-t border-white/[0.06]">
-                        <span className="text-xs text-white/40">Total</span>
-                        <span className="font-mono text-sm font-semibold text-[#FAFAFA]">
-                          {fundSalaries.reduce((a, s) => a + parseFloat(s || "0"), 0).toFixed(2)} cUSDC
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-orange-400/80">No cached salaries found. Enter the total payroll amount to approve the vault.</p>
-                      <GlassCard padding="sm">
-                        <NumericKeypad value={manualTotal} onChange={setManualTotal} unit="cUSDC" />
-                      </GlassCard>
-                    </>
-                  )}
-
-                  {sheetSteps.length > 0 && <GlassCard padding="sm"><TxStatus steps={sheetSteps} /></GlassCard>}
-
-                  <Button fullWidth size="lg" isLoading={isSheetBusy} onClick={fundRun}>
-                    Approve & Fund
-                  </Button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+          <Button fullWidth size="lg" isLoading={isSheetBusy} onClick={fundRun}>
+            Approve & Fund
+          </Button>
+        </Modal>
       </AppShell>
     );
   }
@@ -435,7 +407,7 @@ export default function PayrollPage() {
     return (
       <AppShell>
         <PageHeader title="New Template" onBack={() => !isCreatingTemplate && setView("list")} />
-        <div className="flex flex-col gap-5 px-4">
+        <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
           <SectionLabel>Employees</SectionLabel>
           {employeeAddrs.map((addr, i) => (
             <div key={i} className="flex flex-col gap-2">
@@ -487,7 +459,7 @@ export default function PayrollPage() {
         ) : null}
       />
 
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
         <div className="flex gap-2 p-1 glass-card rounded-2xl">
           {(["employer", "employee"] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}

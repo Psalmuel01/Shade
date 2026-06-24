@@ -4,8 +4,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount } from "wagmi";
 import { motion } from "framer-motion";
-import { ArrowUpDown, Send, ShieldCheck, Briefcase, Settings, ScanLine, ArrowDownLeft, ArrowUpRight, Lock, Unlock, Clock, CheckCircle, ExternalLink, RefreshCw } from "lucide-react";
+import {
+  ArrowUpDown, Send, ShieldCheck, Briefcase, Settings, ScanLine,
+  ArrowDownLeft, ArrowUpRight, Lock, Unlock, Clock, CheckCircle,
+  ExternalLink, RefreshCw,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { EncryptedBadge } from "@/components/ui/EncryptedBadge";
 import { FHEStatusPill } from "@/components/ui/FHEStatusPill";
@@ -44,28 +49,33 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <div className="flex flex-col gap-5 px-4 pt-14 pb-4">
-        {/* Top bar */}
-        <div className="flex items-center justify-between">
-          <ShadeLogoMark size={28} showBg={false} />
-          <Link href="/profile">
-            <div className="p-2 rounded-xl hover:bg-white/[0.06] transition-colors">
-              <Settings className="h-4.5 w-4.5 text-white/40" />
-            </div>
-          </Link>
-        </div>
+      {/* Mobile header — logo back to landing, profile icon */}
+      <div className="flex md:hidden items-center justify-between px-4 pt-12 pb-4">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+          <ShadeLogoMark size={22} showBg />
+          <span className="text-base font-semibold tracking-tight">Shade</span>
+        </Link>
+        <Link href="/profile" className="p-2 rounded-xl hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-colors">
+          <Settings className="h-5 w-5" strokeWidth={1.8} />
+        </Link>
+      </div>
 
+      {/* Desktop header */}
+      <div className="hidden md:block">
+        <PageHeader title="Dashboard" showBack={false} />
+      </div>
+
+      <div className="flex flex-col gap-5 px-4 pb-6 md:px-8 md:pb-8">
         {/* Greeting */}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-base text-white/40">{greeting()}</span>
-          <AddressDisplay address={address ?? ""} chars={5} showCopy />
+        <div className="text-lg flex items-baseline gap-2 px-1">
+          <span className="text-[#FAFAFA] tracking-tight">{greeting()},</span>
+          <AddressDisplay address={address ?? ""} chars={4} showCopy className="text-lg text-amber-400/90" />
         </div>
 
         {/* Balance card */}
         <GlassCard padding="lg" glow={isRevealed}>
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-5 md:py-4">
             <FHEStatusPill status="idle" />
-
             <EncryptedBadge
               size="lg"
               value={decryptedValue ?? undefined}
@@ -95,7 +105,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Activity */}
+        {/* Activity feed */}
         <ActivityFeed address={address} chainId={chainId} />
       </div>
     </AppShell>

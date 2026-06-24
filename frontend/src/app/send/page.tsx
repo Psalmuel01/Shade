@@ -30,7 +30,7 @@ export default function SendRecipientPage() {
     <AppShell>
       <PageHeader title="Send cUSDC" showBack={false} />
 
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
         {/* Step indicator */}
         <div className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (

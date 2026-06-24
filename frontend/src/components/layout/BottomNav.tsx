@@ -18,7 +18,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40 md:hidden">
       <div
         className="flex items-center justify-around px-2 pt-3 bottom-nav"
         style={{

@@ -41,7 +41,7 @@ function SendAmountInner() {
   return (
     <AppShell>
       <PageHeader title="Amount" />
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 md:px-8 md:max-w-2xl md:mx-auto">
         {/* Step indicator */}
         <div className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (

@@ -39,7 +39,7 @@ export default function ProfilePage() {
     <AppShell>
       <PageHeader title="Profile" showBack={false} />
 
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 md:px-8 w-full md:max-w-2xl md:mx-auto">
         {/* Identity */}
         <GlassCard padding="md">
           <div className="flex flex-col items-center gap-4 py-2">

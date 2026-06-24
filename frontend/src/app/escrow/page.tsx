@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { useTrackedWrite } from "@/hooks/useTrackedWrite";
 import { isAddress } from "viem";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, ShieldCheck, X } from "lucide-react";
+import { Plus, ShieldCheck } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -123,7 +123,7 @@ export default function EscrowPage() {
         }
       />
 
-      <div className="flex flex-col gap-4 px-4">
+      <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
         {ids.length === 0 ? (
           <div className="flex flex-col items-center gap-4 py-12">
             <div className="w-14 h-14 rounded-2xl glass-card flex items-center justify-center">
@@ -142,62 +142,33 @@ export default function EscrowPage() {
         )}
       </div>
 
-      {/* Create bottom sheet */}
-      <AnimatePresence>
-        {showCreate && (
-          <>
-            <motion.div
-              className="fixed inset-0 bg-black/60 z-40"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCreate(false)}
-            />
-            <motion.div
-              className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            >
-              <div className="glass-card rounded-t-3xl p-5 flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-[#FAFAFA]">New Escrow</h3>
-                  <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-white/[0.06]">
-                    <X className="h-4 w-4 text-white/40" />
-                  </button>
-                </div>
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="New Escrow">
+        <Input label="Recipient" placeholder="0x..." value={recipient} onChange={(e) => setRecipient(e.target.value)} />
+        <Input label="Arbiter (optional)" placeholder="0x... or leave blank" value={arbiter} onChange={(e) => setArbiter(e.target.value)} />
 
-                <Input label="Recipient" placeholder="0x..." value={recipient} onChange={(e) => setRecipient(e.target.value)} />
-                <Input label="Arbiter (optional)" placeholder="0x... or leave blank" value={arbiter} onChange={(e) => setArbiter(e.target.value)} />
+        <div className="flex flex-col gap-2">
+          <span className="text-xs text-white/50 uppercase tracking-wider">Timeout</span>
+          <div className="grid grid-cols-4 gap-2">
+            {TIMEOUT_OPTIONS.map((o, i) => (
+              <button
+                key={o.label}
+                onClick={() => setTimeoutIdx(i)}
+                className={`py-2 rounded-xl text-sm font-medium transition-all ${i === timeoutIdx ? "bg-amber-500 text-black" : "bg-white/[0.05] text-white/40 hover:text-white/60"}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs text-white/50 uppercase tracking-wider">Timeout</span>
-                  <div className="grid grid-cols-4 gap-2">
-                    {TIMEOUT_OPTIONS.map((o, i) => (
-                      <button
-                        key={o.label}
-                        onClick={() => setTimeoutIdx(i)}
-                        className={`py-2 rounded-xl text-sm font-medium transition-all ${i === timeoutIdx ? "bg-amber-500 text-black" : "bg-white/[0.05] text-white/40 hover:text-white/60"}`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+        <GlassCard padding="sm">
+          <NumericKeypad value={amount} onChange={setAmount} />
+        </GlassCard>
 
-                <GlassCard padding="sm">
-                  <NumericKeypad value={amount} onChange={setAmount} />
-                </GlassCard>
-
-                <Button fullWidth size="lg" isLoading={isCreating} disabled={!isAddress(recipient) || !amount} onClick={createEscrow}>
-                  Create & Fund
-                </Button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+        <Button fullWidth size="lg" isLoading={isCreating} disabled={!isAddress(recipient) || !amount} onClick={createEscrow}>
+          Create & Fund
+        </Button>
+      </Modal>
     </AppShell>
   );
 }

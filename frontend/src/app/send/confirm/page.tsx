@@ -133,7 +133,7 @@ function SendConfirmInner() {
   return (
     <AppShell>
       <PageHeader title="Confirm Send" />
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 md:px-8 md:max-w-2xl md:mx-auto">
         {/* Step indicator */}
         <div className="flex gap-2">
           {[1, 2, 3].map((n) => (

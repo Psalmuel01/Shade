@@ -152,7 +152,7 @@ export default function ProvePage() {
     <AppShell>
       <PageHeader title="Prove Balance" showBack={false} />
 
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
 
         {/* Result card */}
         {hasProof && p && (

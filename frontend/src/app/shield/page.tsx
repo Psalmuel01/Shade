@@ -171,7 +171,7 @@ export default function ShieldPage() {
     <AppShell>
       <PageHeader title="Shield / Unshield" showBack={false} />
 
-      <div className="flex flex-col gap-5 px-4">
+      <div className="flex flex-col gap-5 px-4 pb-6 w-full md:max-w-2xl md:mx-auto md:px-8 md:pb-8">
         {/* Tab pills */}
         <div className="flex gap-2 p-1 glass-card rounded-2xl">
           {(["shield", "unshield"] as Tab[]).map((t) => (
@@ -224,7 +224,17 @@ export default function ShieldPage() {
           </>
         )}
 
-        {/* cUSDC balance on unshield tab */}
+        {/* Balance row — USDC on shield tab, cUSDC on unshield tab */}
+        {tab === "shield" && (
+          <GlassCard padding="sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-white/40">USDC balance</span>
+              <span className="text-sm font-mono text-[#FAFAFA]">
+                {usdcBalanceFmt !== undefined ? `${usdcBalanceFmt} USDC` : "—"}
+              </span>
+            </div>
+          </GlassCard>
+        )}
         {tab === "unshield" && (
           <GlassCard padding="sm">
             <div className="flex items-center justify-between gap-3">
