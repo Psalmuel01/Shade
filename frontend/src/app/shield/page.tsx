@@ -19,7 +19,7 @@ import { useFhevm } from "@/lib/fhevm";
 import { useBalance } from "@/hooks/useBalance";
 import { usePendingUnshield, savePendingUnshield } from "@/hooks/usePendingUnshield";
 import { encrypt64 } from "@/lib/shade";
-import { Clock, Loader2 } from "lucide-react";
+import { Clock, Loader2, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 
 const USDC_DECIMALS = 6;
@@ -226,14 +226,40 @@ export default function ShieldPage() {
 
         {/* Balance row — USDC on shield tab, cUSDC on unshield tab */}
         {tab === "shield" && (
-          <GlassCard padding="sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-white/40">USDC balance</span>
-              <span className="text-sm font-mono text-[#FAFAFA]">
-                {usdcBalanceFmt !== undefined ? `${usdcBalanceFmt} USDC` : "—"}
-              </span>
+          <>
+            <GlassCard padding="sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-white/40">USDC balance</span>
+                <span className="text-sm font-mono text-[#FAFAFA]">
+                  {usdcBalanceFmt !== undefined ? `${usdcBalanceFmt} USDC` : "—"}
+                </span>
+              </div>
+            </GlassCard>
+            <div className="flex flex-col gap-1.5 px-1">
+              <a
+                href="https://faucet.circle.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between hover:bg-white/[0.03] rounded-lg px-1 py-0.5 transition-colors"
+              >
+                <span className="text-xs text-white/30">Need test USDC?</span>
+                <span className="text-xs text-amber-400/60 hover:text-amber-400 flex items-center gap-1 transition-colors">
+                  Circle faucet <ExternalLink className="h-3 w-3" />
+                </span>
+              </a>
+              <a
+                href="https://faucet.quicknode.com/ethereum/sepolia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between hover:bg-white/[0.03] rounded-lg px-1 py-0.5 transition-colors"
+              >
+                <span className="text-xs text-white/30">Need Sepolia ETH for gas?</span>
+                <span className="text-xs text-amber-400/60 hover:text-amber-400 flex items-center gap-1 transition-colors">
+                  QuickNode faucet <ExternalLink className="h-3 w-3" />
+                </span>
+              </a>
             </div>
-          </GlassCard>
+          </>
         )}
         {tab === "unshield" && (
           <GlassCard padding="sm">

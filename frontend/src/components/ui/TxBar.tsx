@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { useWaitForTransactionReceipt } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 import { useTxQueue, TxRecord } from "@/lib/txQueue";
 
@@ -46,9 +45,15 @@ export function TxWatcher() {
   );
 }
 
+function etherscanUrl(tx: TxRecord): string {
+  const base = tx.chainId === 11155111
+    ? "https://sepolia.etherscan.io/tx/"
+    : "https://etherscan.io/tx/";
+  return `${base}${tx.hash}`;
+}
+
 export function TxBar() {
   const { txs } = useTxQueue();
-  const router = useRouter();
   const visible = txs.filter((t) => t.status === "confirming" || t.status === "done" || t.status === "error");
 
   return (
@@ -63,9 +68,11 @@ export function TxBar() {
         >
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex flex-col gap-1.5">
             {visible.map((tx) => (
-              <button
+              <a
                 key={tx.id}
-                onClick={() => router.push(tx.href)}
+                href={etherscanUrl(tx)}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 w-full text-left group"
               >
                 {tx.status === "confirming" ? (
@@ -82,11 +89,14 @@ export function TxBar() {
                 }`}>
                   {tx.label}
                 </span>
-                <span className="text-2xs text-white/30 shrink-0">
+                <span className="text-2xs text-white/30 shrink-0 flex items-center gap-1">
                   {tx.status === "confirming" ? "confirming…" :
                    tx.status === "done" ? "confirmed" : "failed"}
+                  {tx.status !== "confirming" && (
+                    <ExternalLink className="h-2.5 w-2.5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  )}
                 </span>
-              </button>
+              </a>
             ))}
           </div>
         </motion.div>

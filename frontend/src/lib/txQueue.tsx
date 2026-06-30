@@ -11,11 +11,12 @@ export type TxRecord = {
   status: TxStatus;
   href: string;
   ts: number;
+  chainId?: number;
 };
 
 type TxQueueCtx = {
   txs: TxRecord[];
-  addTx: (label: string, hash: `0x${string}`, href: string) => string;
+  addTx: (label: string, hash: `0x${string}`, href: string, chainId?: number) => string;
   completeTx: (id: string, status: "done" | "error") => void;
 };
 
@@ -57,9 +58,9 @@ export function TxQueueProvider({ children }: { children: React.ReactNode }) {
     setTxs((prev) => { const next = fn(prev); persist(next); return next; });
   }, []);
 
-  const addTx = useCallback((label: string, hash: `0x${string}`, href: string): string => {
+  const addTx = useCallback((label: string, hash: `0x${string}`, href: string, chainId?: number): string => {
     const id = `tx-${Date.now()}-${++seq.current}`;
-    mutate((prev) => [...prev, { id, label, hash, status: "confirming", href, ts: Date.now() }]);
+    mutate((prev) => [...prev, { id, label, hash, status: "confirming", href, ts: Date.now(), chainId }]);
     return id;
   }, [mutate]);
 

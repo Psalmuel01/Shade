@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ShadeLogoMark } from "@/components/icons/ShadeLogoMark";
 import { ArrowRight, ArrowUpDown, Briefcase, ShieldCheck, ScanLine, Shield, ExternalLink, Lock, Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { useGlobalStats } from "@/hooks/useGlobalStats";
 
 const STEPS = [
   {
@@ -56,6 +57,37 @@ const FEATURES = [
     color: "text-green-400 bg-green-500/10",
   },
 ];
+
+function StatPill({ label, value }: { label: string; value: number | undefined }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-2xl font-mono font-semibold text-[#FAFAFA] tabular-nums">
+        {value === undefined ? "—" : value.toLocaleString()}
+      </span>
+      <span className="text-xs text-white/35 uppercase tracking-wider">{label}</span>
+    </div>
+  );
+}
+
+function ProtocolStats() {
+  const { transferCount, escrowCount, runCount, isLoading } = useGlobalStats();
+
+  return (
+    <section className="py-10 px-6 border-t border-white/[0.06]">
+      <div className="max-w-6xl mx-auto flex flex-col items-center gap-6">
+        <p className="text-xs font-mono text-amber-400/50 uppercase tracking-widest">Live on Sepolia</p>
+        <div className="flex flex-wrap justify-center gap-10 md:gap-16">
+          <StatPill label="Confidential transfers" value={isLoading ? undefined : transferCount} />
+          <StatPill label="Escrows created"        value={isLoading ? undefined : escrowCount} />
+          <StatPill label="Payroll runs"           value={isLoading ? undefined : runCount} />
+        </div>
+        <Link href="/stats" className="text-xs text-white/25 hover:text-amber-400/60 transition-colors">
+          View full protocol stats →
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export default function LandingPage() {
   const { isConnected } = useAccount();
@@ -285,6 +317,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <ProtocolStats />
+
       {/* Trust model */}
       <section className="py-20 px-6 border-t border-white/[0.06]">
         <div className="max-w-3xl mx-auto text-center">
@@ -324,6 +358,9 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex items-center gap-7">
+            <Link href="/stats" className="text-sm text-white/40 hover:text-white/70 transition-colors">
+              Stats
+            </Link>
             <a
               href="https://docs.zama.ai/fhevm"
               target="_blank"
