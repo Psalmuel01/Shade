@@ -25,8 +25,23 @@ export function useBalance() {
     query: { enabled: !!address },
   });
 
+  const ZERO_HANDLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
   const reveal = useCallback(async () => {
-    if (!instance || !address || !handle || !chainId) return;
+    if (!address || !chainId) return;
+    if (!instance) {
+      const { default: toast } = await import("react-hot-toast");
+      toast.error("Encryption engine not ready — try reconnecting your wallet");
+      return;
+    }
+    if (!handle) return;
+
+    // Zero handle = account has never shielded; balance is 0, no gateway call needed
+    if (handle === ZERO_HANDLE || handle === "0x") {
+      setDecryptedValue("0.00");
+      setIsRevealed(true);
+      return;
+    }
     if (isRevealed) {
       setIsRevealed(false);
       setDecryptedValue(null);
@@ -57,6 +72,9 @@ export function useBalance() {
       setIsRevealed(true);
     } catch (err) {
       console.error("[Shade] balance decrypt failed:", err);
+      const { default: toast } = await import("react-hot-toast");
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Decrypt failed: ${msg.slice(0, 80)}`);
     } finally {
       setIsDecrypting(false);
     }

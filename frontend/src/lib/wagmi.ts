@@ -2,7 +2,7 @@
 
 import { createConfig, http, fallback } from "wagmi";
 import { sepolia, hardhat } from "wagmi/chains";
-import { injected } from "wagmi/connectors";
+import { injected, coinbaseWallet } from "wagmi/connectors";
 
 const userRpc = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL;
 
@@ -14,7 +14,10 @@ const sepoliaTransport = fallback([
 
 export const wagmiConfig = createConfig({
   chains: [sepolia, hardhat],
-  connectors: [injected()],
+  connectors: [
+    injected(),
+    coinbaseWallet({ appName: "Shade" }),
+  ],
   transports: {
     [sepolia.id]: sepoliaTransport,
     [hardhat.id]: http("http://127.0.0.1:8545"),

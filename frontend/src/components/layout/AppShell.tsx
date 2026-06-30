@@ -5,6 +5,30 @@ import { BottomNav } from "./BottomNav";
 import { Sidebar } from "./Sidebar";
 import { TxBar, TxWatcher } from "@/components/ui/TxBar";
 import { cn } from "@/lib/cn";
+import { useAccount, useSwitchChain } from "wagmi";
+import { sepolia } from "wagmi/chains";
+
+function WrongNetworkBanner() {
+  const { isConnected, chainId } = useAccount();
+  const { switchChain, isPending } = useSwitchChain();
+
+  if (!isConnected || chainId === sepolia.id || chainId === 31337) return null;
+
+  return (
+    <div className="w-full bg-red-500/10 border-b border-red-500/20 px-4 py-3 flex items-center justify-between gap-3">
+      <p className="text-sm text-red-400">
+        Switch to <strong>Sepolia</strong> to use Shade
+      </p>
+      <button
+        onClick={() => switchChain({ chainId: sepolia.id })}
+        disabled={isPending}
+        className="shrink-0 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-medium transition-colors disabled:opacity-50"
+      >
+        {isPending ? "Switching…" : "Switch"}
+      </button>
+    </div>
+  );
+}
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -16,6 +40,7 @@ export function AppShell({ children, showNav = true }: AppShellProps) {
     <div className="min-h-dvh bg-[#080808]">
       <TxWatcher />
       <TxBar />
+      <WrongNetworkBanner />
 
       {/*
         Mobile (<768px): narrow column (max-w-430px) centered via mx-auto, fixed bottom nav

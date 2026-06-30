@@ -63,6 +63,7 @@ export default function LandingPage() {
   const { connect, connectors } = useConnect();
   const justConnected = useRef(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showWalletPicker, setShowWalletPicker] = useState(false);
 
   // Only redirect to dashboard when the user explicitly clicked Launch App
   useEffect(() => {
@@ -76,8 +77,13 @@ export default function LandingPage() {
       router.push("/dashboard");
       return;
     }
+    setShowWalletPicker(true);
+  }
+
+  function connectWith(connector: (typeof connectors)[number]) {
     justConnected.current = true;
-    if (connectors[0]) connect({ connector: connectors[0] });
+    setShowWalletPicker(false);
+    connect({ connector });
   }
 
   return (
@@ -345,6 +351,46 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Wallet picker modal */}
+      <AnimatePresence>
+        {showWalletPicker && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowWalletPicker(false)} />
+            <motion.div
+              className="relative w-full max-w-sm mx-4 mb-6 md:mb-0 glass-card p-6 flex flex-col gap-4"
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: "spring", damping: 24, stiffness: 300 }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold">Connect Wallet</h3>
+                <button onClick={() => setShowWalletPicker(false)} className="p-1.5 rounded-lg hover:bg-white/[0.06] text-white/40 hover:text-white/70 transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {connectors.map((connector) => (
+                  <button
+                    key={connector.uid}
+                    onClick={() => connectWith(connector)}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] transition-all text-left"
+                  >
+                    <span className="text-sm font-medium">{connector.name}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-white/25 text-center">Sepolia testnet · Zama fhEVM</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -108,7 +108,7 @@ export default function EscrowDetailPage() {
       }, label);
       refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message.slice(0, 80) : "Failed");
+      toast.error(err instanceof Error ? err.message : "Transaction failed", { duration: 8000 });
     }
   }
 
@@ -140,7 +140,7 @@ export default function EscrowDetailPage() {
       setFundAmount("");
       refetch();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message.slice(0, 80) : "Failed");
+      toast.error(err instanceof Error ? err.message : "Funding failed", { duration: 8000 });
     } finally {
       setIsFunding(false);
     }
