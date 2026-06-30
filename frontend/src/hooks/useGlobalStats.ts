@@ -100,9 +100,8 @@ export function useGlobalStats(): GlobalStats {
     proofCount === null;
 
   return {
-    escrowCount:   Number(escrowCount   ?? 0n),
-    runCount:      Number(runCount      ?? 0n),
-    templateCount: Number(templateCount ?? 0n),
+    escrowCount:   Number(escrowCount ?? 0n),
+    runCount:      Number(runCount    ?? 0n),
     transferCount: transferCount ?? 0,
     shieldCount:   shieldCount  ?? 0,
     stealthCount:  stealthCount ?? 0,

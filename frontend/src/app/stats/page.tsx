@@ -19,7 +19,7 @@ const STATS = [
   {
     key: "transferCount" as const,
     label: "Confidential Transfers",
-    sub: "Encrypted sends where only sender and receiver know the amount",
+    sub: "Encrypted sends where amount is the only secret",
     icon: Lock,
     color: "text-amber-400 bg-amber-500/10",
     contract: "ConfidentialUSDC",
