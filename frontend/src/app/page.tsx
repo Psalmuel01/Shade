@@ -6,7 +6,7 @@ import { useAccount, useConnect } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ShadeLogoMark } from "@/components/icons/ShadeLogoMark";
-import { ArrowRight, ArrowUpDown, Briefcase, ShieldCheck, ScanLine, Shield, ExternalLink, Lock, Menu, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Briefcase, ShieldCheck, ScanLine, Shield, Lock, Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useGlobalStats } from "@/hooks/useGlobalStats";
 
@@ -229,15 +229,12 @@ export default function LandingPage() {
               {isConnected ? "Go to App" : "Launch App"}
               <ArrowRight className="h-4 w-4" />
             </button>
-            <a
-              href="https://docs.zama.ai/fhevm"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/docs"
               className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl border border-white/[0.12] text-white/70 hover:text-white hover:border-white/25 font-medium text-sm transition-colors"
             >
               Read Docs
-              <ExternalLink className="h-4 w-4" />
-            </a>
+            </Link>
           </motion.div>
 
           <motion.div
@@ -361,16 +358,11 @@ export default function LandingPage() {
             <Link href="/stats" className="text-sm text-white/40 hover:text-white/70 transition-colors">
               Stats
             </Link>
-            <a
-              href="https://docs.zama.ai/fhevm"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-white/40 hover:text-white/70 transition-colors"
-            >
+            <Link href="/docs" className="text-sm text-white/40 hover:text-white/70 transition-colors">
               Docs
-            </a>
+            </Link>
             <a
-              href="https://github.com/zama-ai/fhevm"
+              href="https://github.com/psalmuel01/shade"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-white/40 hover:text-white/70 transition-colors"

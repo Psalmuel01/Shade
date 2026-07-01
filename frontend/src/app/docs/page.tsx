@@ -370,11 +370,10 @@ resolveToDepositor(id)           // arbiter: refund depositor`}</Pre>
           </P>
           <H3>Where is the source code?</H3>
           <P>
-            The contracts and frontend are open source. Check the{" "}
-            <a href="https://github.com/zama-ai/fhevm" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors">
-              Zama fhEVM repository
-            </a>{" "}
-            for the underlying FHE library.
+            The contracts and frontend are open source on{" "}
+            <a href="https://github.com/psalmuel01/shade" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors">
+              GitHub
+            </a>.
           </P>
         </main>
       </div>
